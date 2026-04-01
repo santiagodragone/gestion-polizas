@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contactos de Compañías — Dragone Seguros</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #0d1b2a;
+    --navy2:  #162032;
+    --navy3:  #1e2d42;
+    --gold:   #c8a84b;
+    --white:  #f5f2eb;
+    --muted:  #8a9bb0;
+    --border: rgba(200,168,75,0.18);
+    --danger: #e05555;
+    --serif:  'Playfair Display', Georgia, serif;
+    --sans:   'DM Sans', sans-serif;
+    --mono:   'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--white); font-family: var(--sans); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 10% 0%, rgba(200,168,75,0.07) 0%, transparent 55%),
+                radial-gradient(ellipse at 90% 100%, rgba(26,74,122,0.2) 0%, transparent 55%);
+    pointer-events: none; z-index: 0;
+  }
+
+  header {
+    position: relative; z-index: 10;
+    padding: 1.2rem 2.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,27,42,0.97);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+  .brand-shield {
+    width: 36px; height: 36px;
+    clip-path: polygon(50% 0%, 100% 15%, 100% 70%, 50% 100%, 0% 70%, 0% 15%);
+    background: rgba(200,168,75,0.1); border: 1.5px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--gold);
+  }
+  .brand-text h1 { font-family: var(--serif); font-size: .95rem; font-weight: 600; color: var(--white); }
+  .brand-text span { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; }
+  .back-btn {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; border-radius: 3px;
+    text-decoration: none; transition: color .2s, border-color .2s;
+  }
+  .back-btn:hover { color: var(--gold); border-color: var(--gold); }
+
+  .page { position: relative; z-index: 1; padding: 2.5rem 2.5rem 3rem; }
+
+  .page-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap; }
+  .page-title-wrap {}
+  .page-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: .5rem; display: flex; align-items: center; gap: 8px; }
+  .page-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); display: inline-block; }
+  .page-title { font-family: var(--serif); font-size: clamp(1.5rem,3vw,2.2rem); font-weight: 700; color: var(--white); }
+  .page-title em { font-style: italic; color: var(--gold); }
+
+  .top-actions { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    background: var(--navy2); border: 1px solid var(--border); color: var(--white);
+    padding: .45rem 1rem .45rem 2.2rem; border-radius: 4px;
+    font-family: var(--sans); font-size: 12px; outline: none; width: 220px;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--gold); }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted); pointer-events: none; }
+
+  .filter-wrap { display: flex; gap: .5rem; }
+  .filter-btn {
+    padding: .4rem .9rem; border-radius: 3px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--sans); font-size: 11px;
+    cursor: pointer; transition: all .15s;
+  }
+  .filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .filter-btn.active { background: rgba(200,168,75,0.1); border-color: var(--gold); color: var(--gold); }
+
+  .btn-nuevo {
+    padding: .45rem 1.2rem; border-radius: 4px;
+    background: var(--gold); color: var(--navy); border: none;
+    font-family: var(--sans); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: background .15s; white-space: nowrap;
+  }
+  .btn-nuevo:hover { background: var(--gold2, #e8c96b); }
+
+  /* STATS */
+  .stats-bar { display: flex; gap: 2rem; margin-bottom: 1.8rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .sbar { display: flex; align-items: baseline; gap: 5px; }
+  .sbar-val { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--gold); }
+  .sbar-lbl { font-size: 11px; color: var(--muted); }
+  .sbar-sep { width: 1px; height: 24px; background: var(--border); align-self: center; }
+
+  /* GRID DE COMPAÑÍAS */
+  .companies-section { margin-bottom: 2.5rem; }
+  .company-group { margin-bottom: 2rem; }
+  .company-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: .8rem; padding-bottom: .6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .company-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+  .company-name { font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--white); }
+  .company-count { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-left: 4px; }
+
+  .contacts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+
+  .contact-card {
+    background: var(--navy2); padding: 1.2rem 1.4rem;
+    display: flex; flex-direction: column; gap: .8rem;
+    transition: background .15s; position: relative;
+  }
+  .contact-card:hover { background: var(--navy3); }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; }
+  .card-avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(200,168,75,0.12); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 14px; font-weight: 700; color: var(--gold);
+  }
+  .card-info { flex: 1; }
+  .card-name { font-family: var(--serif); font-size: .9rem; font-weight: 600; color: var(--white); line-height: 1.3; }
+  .card-area { font-size: 11px; color: var(--gold); font-weight: 300; margin-top: 2px; }
+
+  .card-actions { display: flex; gap: .4rem; }
+  .card-btn {
+    padding: 3px 8px; border-radius: 3px; border: 1px solid var(--border);
+    background: transparent; font-size: 10px; cursor: pointer; transition: all .15s;
+    font-family: var(--mono); letter-spacing: .05em;
+  }
+  .card-btn.edit { color: var(--muted); }
+  .card-btn.edit:hover { color: var(--gold); border-color: var(--gold); }
+  .card-btn.del { color: var(--muted); }
+  .card-btn.del:hover { color: var(--danger); border-color: var(--danger); }
+
+  .card-contacts { display: flex; flex-direction: column; gap: .35rem; }
+  .card-contact-row { display: flex; align-items: center; gap: .5rem; font-size: 12px; color: var(--muted); }
+  .card-contact-row a { color: var(--muted); text-decoration: none; transition: color .15s; }
+  .card-contact-row a:hover { color: var(--gold); }
+  .card-icon { font-size: 11px; width: 16px; text-align: center; flex-shrink: 0; }
+
+  .card-notas { font-size: 11px; color: var(--muted); font-weight: 300; font-style: italic; padding-top: .5rem; border-top: 1px solid var(--border); line-height: 1.5; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--muted); font-size: 13px; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: .4; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 4rem; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  .dot { animation: pulse 1.2s infinite; display: inline-block; }
+  .dot:nth-child(2){animation-delay:.2s}
+  .dot:nth-child(3){animation-delay:.4s}
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 100;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--navy2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 2rem; width: 100%; max-width: 480px;
+    animation: modalIn .2s ease;
+  }
+  @keyframes modalIn { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+  .modal-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 700; color: var(--white); margin-bottom: 1.5rem; }
+  .modal-title span { color: var(--gold); font-style: italic; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin-bottom: 1.2rem; }
+  .form-group { display: flex; flex-direction: column; gap: .35rem; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 11px; color: var(--muted); letter-spacing: .08em; font-family: var(--mono); }
+  input, textarea, select {
+    background: var(--navy3); border: 1px solid var(--border); color: var(--white);
+    padding: .5rem .8rem; border-radius: 4px;
+    font-family: var(--sans); font-size: 13px; outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  textarea { resize: vertical; min-height: 70px; }
+  select option { background: var(--navy2); }
+
+  .modal-actions { display: flex; gap: .7rem; justify-content: flex-end; margin-top: 1.5rem; }
+  .btn-cancel {
+    padding: .5rem 1.2rem; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--sans); font-size: 12px;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-cancel:hover { border-color: var(--muted); color: var(--white); }
+  .btn-save {
+    padding: .5rem 1.4rem; border-radius: 4px; border: none;
+    background: var(--gold); color: var(--navy); font-family: var(--sans); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-save:hover { background: #e8c96b; }
+  .btn-save:disabled { opacity: .5; cursor: default; }
+
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 200;
+    background: var(--navy3); border: 1px solid var(--gold);
+    color: var(--white); padding: .7rem 1.2rem; border-radius: 6px;
+    font-size: 12px; font-family: var(--sans);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .3s, transform .3s;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  footer { position: relative; z-index: 1; padding: 1.2rem 2.5rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-family: var(--serif); font-size: 12px; color: var(--muted); }
+  .footer-ver { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .1em; }
+
+  @media(max-width:700px){
+    header,.page,footer{padding-left:1.2rem;padding-right:1.2rem;}
+    .form-grid{grid-template-columns:1fr;}
+    .top-actions{width:100%;}
+    .search-wrap input{width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html">
+    <div class="brand-shield">D</div>
+    <div class="brand-text">
+      <h1>Dragone Seguros</h1>
+      <span>Sistema de gestión</span>
+    </div>
+  </a>
+  <a class="back-btn" href="index.html">← Volver al inicio</a>
+</header>
+
+<div class="page">
+  <div class="page-top">
+    <div class="page-title-wrap">
+      <div class="page-eyebrow">Módulo</div>
+      <div class="page-title">Contactos de <em>Compañías</em></div>
+    </div>
+    <div class="top-actions">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Buscar contacto..." oninput="renderContactos()">
+      </div>
+      <div class="filter-wrap" id="filtros"></div>
+      <button class="btn-nuevo" onclick="abrirModal()">+ Nuevo contacto</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="sbar"><span class="sbar-val" id="stat-total">—</span><span class="sbar-lbl">contactos</span></div>
+    <div class="sbar-sep"></div>
+    <div class="sbar"><span class="sbar-val" id="stat-companias">—</span><span class="sbar-lbl">compañías</span></div>
+  </div>
+
+  <div id="contenido">
+    <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando contactos...</span></div>
+  </div>
+</div>
+
+<footer>
+  <span class="footer-brand">Dragone Seguros — Contactos de compañías</span>
+  <span class="footer-ver">v1.0 · 2025</span>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Nuevo <span>contacto</span></div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Compañía aseguradora *</label>
+        <input type="text" id="f-compania" placeholder="Ej: Federación Patronal, Sancor, Zurich..." list="companias-list">
+        <datalist id="companias-list"></datalist>
+      </div>
+      <div class="form-group full">
+        <label>Nombre completo *</label>
+        <input type="text" id="f-nombre" placeholder="Ej: Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label>Área / Rol *</label>
+        <input type="text" id="f-area" placeholder="Ej: Comercial, Siniestros...">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="f-telefono" placeholder="Ej: 11 2345-6789">
+      </div>
+      <div class="form-group full">
+        <label>Mail</label>
+        <input type="email" id="f-mail" placeholder="Ej: juan@compania.com">
+      </div>
+      <div class="form-group full">
+        <label>Notas (opcional)</label>
+        <textarea id="f-notas" placeholder="Información adicional, horarios, observaciones..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" id="btn-guardar" onclick="guardarContacto()">Guardar contacto</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CSV_URL    = "https://api.allorigins.win/raw?url=https://docs.google.com/spreadsheets/d/e/2PACX-1vREzzsQQW5dFFIrMEHtSyeO6nDXxlFU8ndYHggOptUkhUjRc3ssQ_NlV-GQGEQ8sejxtdyscM7snMm5/pub?gid=1021206087%26single=true%26output=csv";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFydbgOT0KDGjMaiE8UrJF7LCVZH3hZzwCAO4QriMnDMjfRB5PVYzqSZMlDFwv8rt8/exec";
+
+let contactos = [];
+let editandoId = null;
+let filtroCompania = "todas";
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let c of line) {
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    vals.push(cur.trim());
+    return {
+      id:       (vals[0] || '').replace(/"/g,''),
+      compania: (vals[1] || '').replace(/"/g,''),
+      nombre:   (vals[2] || '').replace(/"/g,''),
+      area:     (vals[3] || '').replace(/"/g,''),
+      telefono: (vals[4] || '').replace(/"/g,''),
+      mail:     (vals[5] || '').replace(/"/g,''),
+      notas:    (vals[6] || '').replace(/"/g,''),
+    };
+  }).filter(r => r.nombre);
+}
+
+async function cargarDatos() {
+  try {
+    const resp = await fetch(CSV_URL + '&t=' + Date.now());
+    const text = await resp.text();
+    contactos = parseCSV(text);
+    renderContactos();
+  } catch(e) {
+    document.getElementById('contenido').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><p>Error al cargar contactos. Verificá la conexión.</p></div>';
+  }
+}
+
+function getCompanias() {
+  return [...new Set(contactos.map(c => c.compania).filter(Boolean))].sort();
+}
+
+function renderFiltros() {
+  const companias = getCompanias();
+  const wrap = document.getElementById('filtros');
+  wrap.innerHTML = '';
+  if (companias.length === 0) return;
+  const btnTodas = document.createElement('button');
+  btnTodas.className = 'filter-btn' + (filtroCompania === 'todas' ? ' active' : '');
+  btnTodas.textContent = 'Todas';
+  btnTodas.onclick = () => { filtroCompania = 'todas'; renderContactos(); };
+  wrap.appendChild(btnTodas);
+  companias.forEach(comp => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (filtroCompania === comp ? ' active' : '');
+    btn.textContent = comp;
+    btn.onclick = () => { filtroCompania = comp; renderContactos(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderContactos() {
+  renderFiltros();
+  const busqueda = (document.getElementById('search').value || '').toLowerCase();
+  let filtrados = contactos.filter(c => {
+    if (filtroCompania !== 'todas' && c.compania !== filtroCompania) return false;
+    if (busqueda) {
+      const txt = (c.nombre + c.compania + c.area + c.mail + c.telefono).toLowerCase();
+      if (!txt.includes(busqueda)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('stat-total').textContent = contactos.length;
+  document.getElementById('stat-companias').textContent = getCompanias().length;
+
+  // Actualizar datalist
+  const dl = document.getElementById('companias-list');
+  dl.innerHTML = '';
+  getCompanias().forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    dl.appendChild(opt);
+  });
+
+  if (filtrados.length === 0) {
+    document.getElementById('contenido').innerHTML = '<div class="empty"><div class="empty-icon">🏢</div><p>' + (contactos.length === 0 ? 'Todavía no hay contactos. Agregá el primero.' : 'No hay contactos que coincidan.') + '</p></div>';
+    return;
+  }
+
+  // Agrupar por compañía
+  const grupos = {};
+  filtrados.forEach(c => {
+    if (!grupos[c.compania]) grupos[c.compania] = [];
+    grupos[c.compania].push(c);
+  });
+
+  let html = '<div class="companies-section">';
+  Object.keys(grupos).sort().forEach(comp => {
+    html += `<div class="company-group">
+      <div class="company-header">
+        <div class="company-dot"></div>
+        <span class="company-name">${comp}</span>
+        <span class="company-count">${grupos[comp].length} contacto${grupos[comp].length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="contacts-grid">`;
+    grupos[comp].forEach(c => {
+      const iniciales = c.nombre.split(' ').slice(0,2).map(p => p[0]).join('').toUpperCase();
+      html += `
+        <div class="contact-card">
+          <div class="card-top">
+            <div class="card-avatar">${iniciales}</div>
+            <div class="card-info">
+              <div class="card-name">${c.nombre}</div>
+              <div class="card-area">${c.area}</div>
+            </div>
+            <div class="card-actions">
+              <button class="card-btn edit" onclick="editarContacto('${c.id}')">Editar</button>
+              <button class="card-btn del" onclick="eliminarContacto('${c.id}', '${c.nombre.replace(/'/g,"\\'")}')">✕</button>
+            </div>
+          </div>
+          <div class="card-contacts">
+            ${c.telefono ? `<div class="card-contact-row"><span class="card-icon">📞</span><a href="tel:${c.telefono}">${c.telefono}</a></div>` : ''}
+            ${c.mail ? `<div class="card-contact-row"><span class="card-icon">✉</span><a href="mailto:${c.mail}">${c.mail}</a></div>` : ''}
+          </div>
+          ${c.notas ? `<div class="card-notas">${c.notas}</div>` : ''}
+        </div>`;
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('contenido').innerHTML = html;
+}
+
+function abrirModal(contacto) {
+  editandoId = null;
+  document.getElementById('modal-title').innerHTML = 'Nuevo <span>contacto</span>';
+  document.getElementById('f-compania').value = '';
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-area').value = '';
+  document.getElementById('f-telefono').value = '';
+  document.getElementById('f-mail').value = '';
+  document.getElementById('f-notas').value = '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function editarContacto(id) {
+  const c = contactos.find(x => x.id === id);
+  if (!c) return;
+  editandoId = id;
+  document.getElementById('modal-title').innerHTML = 'Editar <span>contacto</span>';
+  document.getElementById('f-compania').value = c.compania;
+  document.getElementById('f-nombre').value = c.nombre;
+  document.getElementById('f-area').value = c.area;
+  document.getElementById('f-telefono').value = c.telefono;
+  document.getElementById('f-mail').value = c.mail;
+  document.getElementById('f-notas').value = c.notas;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editandoId = null;
+}
+
+async function guardarContacto() {
+  const compania = document.getElementById('f-compania').value.trim();
+  const nombre   = document.getElementById('f-nombre').value.trim();
+  const area     = document.getElementById('f-area').value.trim();
+  if (!compania || !nombre || !area) { mostrarToast('Completá Compañía, Nombre y Área'); return; }
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  const data = {
+    action:   editandoId ? 'eliminar_y_agregar' : 'agregar',
+    id:       editandoId || '',
+    compania, nombre, area,
+    telefono: document.getElementById('f-telefono').value.trim(),
+    mail:     document.getElementById('f-mail').value.trim(),
+    notas:    document.getElementById('f-notas').value.trim(),
+  };
+
+  try {
+    // Si es edición, primero eliminamos el registro viejo
+    if (editandoId) {
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminar', id: editandoId }) });
+    }
+    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'agregar', compania, nombre, area, telefono: data.telefono, mail: data.mail, notas: data.notas }) });
+    cerrarModal();
+    mostrarToast(editandoId ? 'Contacto actualizado' : 'Contacto guardado');
+    setTimeout(() => cargarDatos(), 1500);
+  } catch(e) {
+    mostrarToast('Error al guardar. Reintentá.');
+  }
+  btn.disabled = false; btn.textContent = 'Guardar contacto';
+}
+
+async function eliminarContacto(id, nombre) {
+  if (!confirm(`¿Eliminás el contacto "${nombre}"?`)) return;
+  try {
+    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminar', id }) });
+    mostrarToast('Contacto eliminado');
+    setTimeout(() => cargarDatos(), 1500);
+  } catch(e) {
+    mostrarToast('Error al eliminar');
+  }
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+cargarDatos();
+</script>
+</body>
+</html>
