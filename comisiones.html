@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comisiones — Dragone Seguros</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #0d1b2a;
+    --navy2:  #162032;
+    --navy3:  #1e2d42;
+    --gold:   #c8a84b;
+    --white:  #f5f2eb;
+    --muted:  #8a9bb0;
+    --border: rgba(200,168,75,0.18);
+    --serif:  'Playfair Display', Georgia, serif;
+    --sans:   'DM Sans', sans-serif;
+    --mono:   'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--white); font-family: var(--sans); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 0%, rgba(200,168,75,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 100%, rgba(26,74,122,0.18) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  header {
+    position: relative; z-index: 10; padding: 1.2rem 2.5rem;
+    border-bottom: 1px solid var(--border); background: rgba(13,27,42,0.97);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+  .brand-shield {
+    width: 36px; height: 36px;
+    clip-path: polygon(50% 0%, 100% 15%, 100% 70%, 50% 100%, 0% 70%, 0% 15%);
+    background: rgba(200,168,75,0.1); border: 1.5px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--gold);
+  }
+  .brand-text h1 { font-family: var(--serif); font-size: .95rem; font-weight: 600; color: var(--white); }
+  .brand-text span { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; }
+  .back-btn {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; border-radius: 3px;
+    text-decoration: none; transition: color .2s, border-color .2s;
+  }
+  .back-btn:hover { color: var(--gold); border-color: var(--gold); }
+
+  .page { position: relative; z-index: 1; padding: 2.5rem 2.5rem 3rem; }
+  .page-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 2rem; gap: 1rem; flex-wrap: wrap; }
+  .page-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: .5rem; display: flex; align-items: center; gap: 8px; }
+  .page-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); display: inline-block; }
+  .page-title { font-family: var(--serif); font-size: clamp(1.5rem,3vw,2.2rem); font-weight: 700; }
+  .page-title em { font-style: italic; color: var(--gold); }
+
+  .top-actions { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; }
+  .search-wrap { position: relative; display: none; }
+  .search-wrap.visible { display: block; }
+  .search-wrap input {
+    background: var(--navy2); border: 1px solid var(--border); color: var(--white);
+    padding: .45rem 1rem .45rem 2.2rem; border-radius: 4px;
+    font-family: var(--sans); font-size: 12px; outline: none; width: 200px;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--gold); }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--muted); pointer-events: none; }
+  .btn-refresh {
+    padding: .45rem 1rem; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--mono); font-size: 11px;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-refresh:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* STATS */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;
+  }
+  .stat-item { padding: 1rem 1.4rem; background: var(--navy2); border-right: 1px solid var(--border); }
+  .stat-item:last-child { border-right: none; }
+  .stat-val { font-family: var(--serif); font-size: 1.4rem; font-weight: 600; color: var(--gold); line-height: 1; }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* FILTROS */
+  .filtros-bloque { margin-bottom: .7rem; }
+  .filtros-wrap { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
+  .filtros-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .1em; min-width: 65px; }
+  .filtro-btn {
+    padding: .3rem .8rem; border-radius: 3px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--sans); font-size: 11px;
+    cursor: pointer; transition: all .15s;
+  }
+  .filtro-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .filtro-btn.active { background: rgba(200,168,75,0.12); border-color: var(--gold); color: var(--gold); }
+  .filtro-btn.anio-btn { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+  /* TABS */
+  .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); margin-top: 1rem; }
+  .tab-btn {
+    padding: .7rem 1.4rem; background: transparent; border: none;
+    font-family: var(--sans); font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all .15s; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--white); }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* DASHBOARD */
+  .dashboard-section { margin-bottom: 2.5rem; }
+  .dash-title {
+    font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--white);
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;
+  }
+  .dash-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .productores-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1rem; }
+  .productor-card {
+    background: var(--navy2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.4rem; position: relative; overflow: hidden; transition: border-color .2s;
+  }
+  .productor-card:hover { border-color: rgba(200,168,75,0.4); }
+  .productor-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--accent, var(--gold));
+  }
+  .prod-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .prod-avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(200,168,75,0.1); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 13px; font-weight: 700;
+  }
+  .prod-name { font-family: var(--serif); font-size: .95rem; font-weight: 600; color: var(--white); }
+  .prod-cod { font-family: var(--mono); font-size: 9px; color: var(--muted); }
+  .prod-rows { display: flex; flex-direction: column; gap: .5rem; }
+  .prod-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .prod-row-lbl { color: var(--muted); }
+  .prod-row-val { font-family: var(--mono); font-size: 11px; color: var(--white); }
+  .prod-row-val.gold { color: var(--gold); font-size: 13px; font-weight: 600; }
+  .prod-divider { height: 1px; background: var(--border); margin: .3rem 0; }
+  .prod-polizas { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: .6rem; }
+
+  .companias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: .8rem; }
+  .compania-card {
+    background: var(--navy2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.2rem; transition: border-color .2s;
+  }
+  .compania-card:hover { border-color: rgba(200,168,75,0.4); }
+  .comp-name { font-family: var(--serif); font-size: .9rem; font-weight: 600; color: var(--white); margin-bottom: .8rem; }
+  .comp-rows { display: flex; flex-direction: column; gap: .4rem; }
+  .comp-row { display: flex; justify-content: space-between; font-size: 11px; }
+  .comp-lbl { color: var(--muted); }
+  .comp-val { font-family: var(--mono); color: var(--white); }
+  .comp-val.gold { color: var(--gold); }
+  .comp-polizas { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--border); }
+
+  /* TABLA */
+  .tabla-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { background: var(--navy3); }
+  thead th {
+    padding: .7rem .9rem; text-align: left;
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  thead th:hover { color: var(--gold); }
+  tbody tr { background: var(--navy2); border-bottom: 1px solid rgba(200,168,75,0.06); transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--navy3); }
+  td { padding: .6rem .9rem; vertical-align: middle; }
+  .td-compania { font-weight: 500; color: var(--white); white-space: nowrap; }
+  .td-asegurado { color: var(--white); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .td-ramo {
+    font-size: 10px; padding: 2px 7px; border-radius: 3px;
+    background: rgba(200,168,75,0.07); border: 1px solid var(--border);
+    color: var(--muted); white-space: nowrap; display: inline-block;
+  }
+  .td-mono { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .td-importe { font-family: var(--mono); font-size: 11px; color: var(--white); white-space: nowrap; }
+  .td-comision { font-family: var(--mono); font-size: 11px; color: var(--gold); white-space: nowrap; font-weight: 600; }
+  .td-productor {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid var(--border); white-space: nowrap; display: inline-block;
+  }
+
+  .empty { text-align: center; padding: 4rem 2rem; color: var(--muted); font-size: 13px; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: .4; }
+  .loading { text-align: center; padding: 4rem; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  .dot { animation: pulse 1.2s infinite; display: inline-block; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+
+  footer {
+    position: relative; z-index: 1; padding: 1.2rem 2.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-brand { font-family: var(--serif); font-size: 12px; color: var(--muted); }
+  .footer-ver { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .1em; }
+
+  @media(max-width:900px){
+    header,.page,footer { padding-left:1.2rem; padding-right:1.2rem; }
+    .stats-bar { grid-template-columns: repeat(2,1fr); }
+    .top-actions { width:100%; }
+    .search-wrap input { width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html">
+    <div class="brand-shield">D</div>
+    <div class="brand-text">
+      <h1>Dragone Seguros</h1>
+      <span>Sistema de gestión</span>
+    </div>
+  </a>
+  <a class="back-btn" href="index.html">← Volver al inicio</a>
+</header>
+
+<div class="page">
+  <div class="page-top">
+    <div class="page-title-wrap">
+      <div class="page-eyebrow">Módulo</div>
+      <div class="page-title">Liquidación de <em>Comisiones</em></div>
+    </div>
+    <div class="top-actions">
+      <div class="search-wrap" id="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Buscar asegurado, compañía..." oninput="renderDetalle()">
+      </div>
+      <button class="btn-refresh" onclick="cargarDatos()">↺ Actualizar</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-val" id="stat-polizas">—</div><div class="stat-lbl">Pólizas</div></div>
+    <div class="stat-item"><div class="stat-val" id="stat-prima">—</div><div class="stat-lbl">Prima total</div></div>
+    <div class="stat-item"><div class="stat-val" id="stat-premio">—</div><div class="stat-lbl">Premio total</div></div>
+    <div class="stat-item"><div class="stat-val" id="stat-comision">—</div><div class="stat-lbl">Comisión total</div></div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-bloque">
+    <div class="filtros-wrap" id="filtros-anio"><span class="filtros-label">AÑO</span></div>
+  </div>
+  <div class="filtros-bloque">
+    <div class="filtros-wrap" id="filtros-mes"><span class="filtros-label">MES</span></div>
+  </div>
+  <div class="filtros-bloque">
+    <div class="filtros-wrap" id="filtros-comp"><span class="filtros-label">COMPAÑÍA</span></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard', this)">📊 Resumen</button>
+    <button class="tab-btn" onclick="switchTab('detalle', this)">📋 Detalle</button>
+  </div>
+
+  <div class="tab-content active" id="tab-dashboard">
+    <div id="dash-contenido">
+      <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-detalle">
+    <div id="detalle-contenido">
+      <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="footer-brand">Dragone Seguros — Comisiones</span>
+  <span class="footer-ver">v1.0 · 2025</span>
+</footer>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFydbgOT0KDGjMaiE8UrJF7LCVZH3hZzwCAO4QriMnDMjfRB5PVYzqSZMlDFwv8rt8/exec";
+
+  const COBRADORES = {
+    '0':  'Roberto',
+    '4':  'Emiliano Bartolomeo',
+    '5':  'Evelin Chain',
+    '7':  'Leonardo Bonilla',
+    '9':  'Santiago',
+    '22': 'Bruno Masnatta',
+    '66': 'Marcelo Haikel',
+  };
+
+  const PROD_COLORES = {
+    '0':  '#c8a84b',
+    '4':  '#7eb8f7',
+    '5':  '#f78fb3',
+    '7':  '#a8e6cf',
+    '9':  '#e8a83a',
+    '22': '#b39ddb',
+    '66': '#80cbc4',
+  };
+
+  const MESES_ORDEN = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+  let registros  = [];
+  let filtroAnio = 'todos';
+  let filtroMes  = 'todos';
+  let filtroComp = 'todas';
+  let sortCol    = null;
+  let sortDir    = 1;
+
+  // ── CARGA ──────────────────────────────────────────────────────────────────
+  async function cargarDatos() {
+    ['dash-contenido','detalle-contenido'].forEach(id => {
+      document.getElementById(id).innerHTML =
+        '<div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>';
+    });
+    try {
+      const resp = await fetch(SCRIPT_URL + "?hoja=Comisiones", { redirect: "follow" });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const raw = await resp.json();
+
+      // Cols en Sheet: Año|Mes|Compañía|Asegurado|Ramo|Póliza|NroEmision|Endha|VigenciaEnd|Moneda|Prima|Premio|ComisionTotal|Cobrador
+      // Ignoramos Endha (col 7) y VigenciaEnd (col 8)
+      registros = raw.slice(1).map((row, i) => ({
+        _row:      i + 2,
+        anio:      String(row[0]  || '').trim(),
+        mes:       String(row[1]  || '').trim(),
+        compania:  String(row[2]  || '').trim(),
+        asegurado: String(row[3]  || '').trim(),
+        ramo:      String(row[4]  || '').trim(),
+        poliza:    String(row[5]  || '').trim(),
+        nroEmision:String(row[6]  || '').trim(),
+        // row[7] = Endha  → ignorado
+        // row[8] = VigEnd → ignorado
+        moneda:    String(row[9]  || '').trim(),
+        prima:     parsePeso(row[10]),
+        premio:    parsePeso(row[11]),
+        comision:  parsePeso(row[12]),
+        cobrador:  String(row[13] || '').trim(),
+      })).filter(r => r.asegurado !== '' || r.compania !== '');
+
+      // Seleccionar 2026 por defecto si existe
+      const anios = getAnios();
+      if (filtroAnio === 'todos' && anios.includes('2026')) filtroAnio = '2026';
+
+      renderFiltros();
+      renderAll();
+    } catch(e) {
+      console.error(e);
+      const err = '<div class="empty"><div class="empty-icon">⚠</div><p>Error al cargar datos. Verificá la conexión.</p></div>';
+      document.getElementById('dash-contenido').innerHTML = err;
+      document.getElementById('detalle-contenido').innerHTML = err;
+    }
+  }
+
+  function parsePeso(val) {
+    if (!val && val !== 0) return 0;
+    return parseFloat(String(val).replace(/\s/g,'').replace(/\./g,'').replace(',','.')) || 0;
+  }
+
+  function fmtPeso(n) {
+    if (!n) return '$ 0';
+    return '$ ' + Math.round(n).toLocaleString('es-AR');
+  }
+
+  function nombreCobrador(cod) {
+    return COBRADORES[String(cod).trim()] || ('Cód. ' + cod);
+  }
+
+  function inicialesCobrador(cod) {
+    return nombreCobrador(cod).split(' ').slice(0,2).map(p => p[0]||'').join('').toUpperCase();
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
+  function getAnios() {
+    return [...new Set(registros.map(r => r.anio).filter(Boolean))].sort((a,b) => Number(b)-Number(a));
+  }
+
+  function getMeses() {
+    return [...new Set(
+      registros.filter(r => filtroAnio === 'todos' || r.anio === filtroAnio).map(r => r.mes).filter(Boolean)
+    )].sort((a,b) => MESES_ORDEN.indexOf(a) - MESES_ORDEN.indexOf(b));
+  }
+
+  function getComps() {
+    return [...new Set(
+      registros.filter(r =>
+        (filtroAnio === 'todos' || r.anio === filtroAnio) &&
+        (filtroMes  === 'todos' || r.mes  === filtroMes)
+      ).map(r => r.compania).filter(Boolean)
+    )].sort();
+  }
+
+  function filtrados() {
+    return registros.filter(r => {
+      if (filtroAnio !== 'todos' && r.anio !== filtroAnio) return false;
+      if (filtroMes  !== 'todos' && r.mes  !== filtroMes)  return false;
+      if (filtroComp !== 'todas' && r.compania !== filtroComp) return false;
+      return true;
+    });
+  }
+
+  // ── FILTROS ────────────────────────────────────────────────────────────────
+  function renderFiltros() {
+    // AÑO
+    const wA = document.getElementById('filtros-anio');
+    wA.innerHTML = '<span class="filtros-label">AÑO</span>';
+    wA.appendChild(mkBtn('Todos', filtroAnio === 'todos', () => { filtroAnio='todos'; filtroMes='todos'; filtroComp='todas'; renderFiltros(); renderAll(); }));
+    getAnios().forEach(a => wA.appendChild(mkBtn(a, filtroAnio === a, () => { filtroAnio=a; filtroMes='todos'; filtroComp='todas'; renderFiltros(); renderAll(); }, 'anio-btn')));
+
+    // MES
+    const wM = document.getElementById('filtros-mes');
+    wM.innerHTML = '<span class="filtros-label">MES</span>';
+    wM.appendChild(mkBtn('Todos', filtroMes === 'todos', () => { filtroMes='todos'; filtroComp='todas'; renderFiltroComp(); renderAll(); }));
+    getMeses().forEach(m => wM.appendChild(mkBtn(m, filtroMes === m, () => { filtroMes=m; filtroComp='todas'; renderFiltroComp(); renderAll(); })));
+
+    renderFiltroComp();
+  }
+
+  function renderFiltroComp() {
+    const wC = document.getElementById('filtros-comp');
+    wC.innerHTML = '<span class="filtros-label">COMPAÑÍA</span>';
+    wC.appendChild(mkBtn('Todas', filtroComp === 'todas', () => { filtroComp='todas'; renderAll(); }));
+    getComps().forEach(c => wC.appendChild(mkBtn(c, filtroComp === c, () => { filtroComp=c; renderAll(); })));
+  }
+
+  function mkBtn(label, active, onClick, extraClass) {
+    const btn = document.createElement('button');
+    btn.className = 'filtro-btn' + (active ? ' active' : '') + (extraClass ? ' ' + extraClass : '');
+    btn.textContent = label;
+    btn.onclick = onClick;
+    return btn;
+  }
+
+  function renderAll() { renderStats(); renderDashboard(); renderDetalle(); }
+
+  // ── STATS ──────────────────────────────────────────────────────────────────
+  function renderStats() {
+    const data = filtrados();
+    document.getElementById('stat-polizas').textContent  = data.length;
+    document.getElementById('stat-prima').textContent    = fmtPeso(data.reduce((a,r)=>a+r.prima,0));
+    document.getElementById('stat-premio').textContent   = fmtPeso(data.reduce((a,r)=>a+r.premio,0));
+    document.getElementById('stat-comision').textContent = fmtPeso(data.reduce((a,r)=>a+r.comision,0));
+  }
+
+  // ── TABS ───────────────────────────────────────────────────────────────────
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('search-wrap').classList.toggle('visible', tab === 'detalle');
+  }
+
+  // ── DASHBOARD ──────────────────────────────────────────────────────────────
+  function renderDashboard() {
+    const data = filtrados();
+    if (data.length === 0) {
+      document.getElementById('dash-contenido').innerHTML =
+        '<div class="empty"><div class="empty-icon">💰</div><p>No hay datos para el período seleccionado.</p></div>';
+      return;
+    }
+
+    const porCobrador = {};
+    data.forEach(r => {
+      const cod = String(r.cobrador).trim();
+      if (!porCobrador[cod]) porCobrador[cod] = { prima:0, premio:0, comision:0, polizas:0, companias:{} };
+      porCobrador[cod].prima    += r.prima;
+      porCobrador[cod].premio   += r.premio;
+      porCobrador[cod].comision += r.comision;
+      porCobrador[cod].polizas  ++;
+      porCobrador[cod].companias[r.compania] = (porCobrador[cod].companias[r.compania]||0) + r.comision;
+    });
+
+    const porCompania = {};
+    data.forEach(r => {
+      if (!porCompania[r.compania]) porCompania[r.compania] = { prima:0, premio:0, comision:0, polizas:0 };
+      porCompania[r.compania].prima    += r.prima;
+      porCompania[r.compania].premio   += r.premio;
+      porCompania[r.compania].comision += r.comision;
+      porCompania[r.compania].polizas  ++;
+    });
+
+    const codsOrdenados = Object.keys(porCobrador).sort((a,b) => porCobrador[b].comision - porCobrador[a].comision);
+
+    let html = '<div class="dashboard-section"><div class="dash-title">Por productor / cobrador</div><div class="productores-grid">';
+    codsOrdenados.forEach(cod => {
+      const p = porCobrador[cod];
+      const color = PROD_COLORES[cod] || '#c8a84b';
+      const topComps = Object.entries(p.companias).sort((a,b)=>b[1]-a[1]).slice(0,3)
+        .map(([comp,com]) => `<div class="prod-row"><span class="prod-row-lbl">${comp}</span><span class="prod-row-val">${fmtPeso(com)}</span></div>`).join('');
+      html += `
+        <div class="productor-card" style="--accent:${color}">
+          <div class="prod-header">
+            <div class="prod-avatar" style="color:${color};border-color:${color}40">${inicialesCobrador(cod)}</div>
+            <div><div class="prod-name">${nombreCobrador(cod)}</div><div class="prod-cod">Cód. ${cod}</div></div>
+          </div>
+          <div class="prod-rows">
+            <div class="prod-row"><span class="prod-row-lbl">Prima</span><span class="prod-row-val">${fmtPeso(p.prima)}</span></div>
+            <div class="prod-row"><span class="prod-row-lbl">Premio</span><span class="prod-row-val">${fmtPeso(p.premio)}</span></div>
+            <div class="prod-divider"></div>
+            <div class="prod-row"><span class="prod-row-lbl">Comisión total</span><span class="prod-row-val gold">${fmtPeso(p.comision)}</span></div>
+            ${topComps ? '<div class="prod-divider"></div>' + topComps : ''}
+          </div>
+          <div class="prod-polizas">${p.polizas} póliza${p.polizas!==1?'s':''}</div>
+        </div>`;
+    });
+    html += '</div></div>';
+
+    html += '<div class="dashboard-section"><div class="dash-title">Por compañía</div><div class="companias-grid">';
+    Object.entries(porCompania).sort((a,b)=>b[1].comision-a[1].comision).forEach(([comp,c]) => {
+      html += `
+        <div class="compania-card">
+          <div class="comp-name">${comp}</div>
+          <div class="comp-rows">
+            <div class="comp-row"><span class="comp-lbl">Prima</span><span class="comp-val">${fmtPeso(c.prima)}</span></div>
+            <div class="comp-row"><span class="comp-lbl">Premio</span><span class="comp-val">${fmtPeso(c.premio)}</span></div>
+            <div class="comp-row"><span class="comp-lbl">Comisión</span><span class="comp-val gold">${fmtPeso(c.comision)}</span></div>
+          </div>
+          <div class="comp-polizas">${c.polizas} póliza${c.polizas!==1?'s':''}</div>
+        </div>`;
+    });
+    html += '</div></div>';
+
+    document.getElementById('dash-contenido').innerHTML = html;
+  }
+
+  // ── DETALLE ────────────────────────────────────────────────────────────────
+  function renderDetalle() {
+    const busqueda = (document.getElementById('search').value || '').toLowerCase();
+    let data = filtrados().filter(r => {
+      if (!busqueda) return true;
+      return (r.asegurado + r.compania + r.ramo + r.poliza).toLowerCase().includes(busqueda);
+    });
+
+    if (sortCol) {
+      data = [...data].sort((a,b) => {
+        let va = a[sortCol], vb = b[sortCol];
+        if (typeof va === 'number') return (va-vb)*sortDir;
+        return String(va).localeCompare(String(vb))*sortDir;
+      });
+    }
+
+    if (data.length === 0) {
+      document.getElementById('detalle-contenido').innerHTML =
+        '<div class="empty"><div class="empty-icon">💰</div><p>' +
+        (registros.length === 0 ? 'No hay registros cargados.' : 'No hay registros con ese filtro.') +
+        '</p></div>';
+      return;
+    }
+
+    let html = `<div class="tabla-wrap"><table>
+      <thead><tr>
+        <th onclick="sortBy('anio')">Año</th>
+        <th onclick="sortBy('mes')">Mes</th>
+        <th onclick="sortBy('compania')">Compañía</th>
+        <th onclick="sortBy('asegurado')">Asegurado</th>
+        <th onclick="sortBy('ramo')">Ramo</th>
+        <th onclick="sortBy('poliza')">Póliza</th>
+        <th onclick="sortBy('nroEmision')">Nº Emisión</th>
+        <th onclick="sortBy('moneda')">Moneda</th>
+        <th onclick="sortBy('prima')">Prima</th>
+        <th onclick="sortBy('premio')">Premio</th>
+        <th onclick="sortBy('comision')">Comisión</th>
+        <th onclick="sortBy('cobrador')">Cobrador</th>
+      </tr></thead><tbody>`;
+
+    data.forEach(r => {
+      const color = PROD_COLORES[String(r.cobrador).trim()] || '#8a9bb0';
+      html += `<tr>
+        <td class="td-mono">${r.anio}</td>
+        <td class="td-mono">${r.mes}</td>
+        <td class="td-compania">${r.compania}</td>
+        <td class="td-asegurado" title="${r.asegurado}">${r.asegurado}</td>
+        <td><span class="td-ramo">${r.ramo||'—'}</span></td>
+        <td class="td-mono">${r.poliza||'—'}</td>
+        <td class="td-mono">${r.nroEmision||'—'}</td>
+        <td class="td-mono">${r.moneda||'—'}</td>
+        <td class="td-importe">${fmtPeso(r.prima)}</td>
+        <td class="td-importe">${fmtPeso(r.premio)}</td>
+        <td class="td-comision">${fmtPeso(r.comision)}</td>
+        <td><span class="td-productor" style="color:${color};border-color:${color}40">${nombreCobrador(r.cobrador)}</span></td>
+      </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    document.getElementById('detalle-contenido').innerHTML = html;
+  }
+
+  function sortBy(col) {
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = 1; }
+    renderDetalle();
+  }
+
+  cargarDatos();
+</script>
+</body>
+</html>
