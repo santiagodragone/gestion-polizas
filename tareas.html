@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tareas — Dragone Seguros</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:   #0d1b2a;
+    --navy2:  #162032;
+    --navy3:  #1e2d42;
+    --navy4:  #253550;
+    --gold:   #c8a84b;
+    --white:  #f5f2eb;
+    --muted:  #8a9bb0;
+    --border: rgba(200,168,75,0.18);
+    --danger: #e05555;
+    --ok:     #4caf82;
+    --warn:   #e8a83a;
+    --serif:  'Playfair Display', Georgia, serif;
+    --sans:   'DM Sans', sans-serif;
+    --mono:   'DM Mono', monospace;
+    --col-w:  300px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--white); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(200,168,75,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(26,74,122,0.18) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: relative; z-index: 10; padding: 1.2rem 2.5rem;
+    border-bottom: 1px solid var(--border); background: rgba(13,27,42,0.97);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+  .brand-shield {
+    width: 36px; height: 36px;
+    clip-path: polygon(50% 0%, 100% 15%, 100% 70%, 50% 100%, 0% 70%, 0% 15%);
+    background: rgba(200,168,75,0.1); border: 1.5px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--gold);
+  }
+  .brand-text h1 { font-family: var(--serif); font-size: .95rem; font-weight: 600; color: var(--white); }
+  .brand-text span { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: .8rem; }
+  .back-btn {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--border); padding: 5px 12px; border-radius: 3px;
+    text-decoration: none; transition: color .2s, border-color .2s;
+  }
+  .back-btn:hover { color: var(--gold); border-color: var(--gold); }
+  .btn-nueva {
+    padding: .45rem 1.2rem; border-radius: 4px;
+    background: var(--gold); color: var(--navy); border: none;
+    font-family: var(--sans); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: background .15s; white-space: nowrap;
+  }
+  .btn-nueva:hover { background: #e8c96b; }
+
+  /* PAGE */
+  .page { position: relative; z-index: 1; padding: 2rem 2.5rem 3rem; }
+  .page-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1.8rem; gap: 1rem; flex-wrap: wrap; }
+  .page-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); margin-bottom: .5rem; display: flex; align-items: center; gap: 8px; }
+  .page-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); display: inline-block; }
+  .page-title { font-family: var(--serif); font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; }
+  .page-title em { font-style: italic; color: var(--gold); }
+
+  /* FILTROS */
+  .filtros-bar { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+  .filtros-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .1em; }
+  .filtro-btn {
+    padding: .3rem .8rem; border-radius: 3px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--sans); font-size: 11px;
+    cursor: pointer; transition: all .15s;
+  }
+  .filtro-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .filtro-btn.active { background: rgba(200,168,75,0.12); border-color: var(--gold); color: var(--gold); }
+
+  /* TABLERO */
+  .board {
+    display: flex; gap: 1.2rem; align-items: flex-start;
+    overflow-x: auto; padding-bottom: 1rem;
+  }
+
+  /* COLUMNA */
+  .col {
+    flex: 0 0 var(--col-w); width: var(--col-w);
+    background: var(--navy2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .col-header {
+    padding: 1rem 1.2rem .8rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-header-left { display: flex; align-items: center; gap: 8px; }
+  .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .col-name { font-family: var(--serif); font-size: .9rem; font-weight: 600; color: var(--white); }
+  .col-count {
+    font-family: var(--mono); font-size: 10px; color: var(--muted);
+    background: var(--navy3); padding: 1px 7px; border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .col-cards {
+    padding: .8rem; display: flex; flex-direction: column; gap: .7rem;
+    min-height: 120px; flex: 1;
+    transition: background .15s;
+  }
+  .col-cards.drag-over { background: rgba(200,168,75,0.05); }
+
+  /* TARJETA */
+  .card {
+    background: var(--navy3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.1rem;
+    cursor: grab; transition: border-color .15s, transform .15s, box-shadow .15s;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--prioridad-color, var(--muted));
+  }
+  .card:hover { border-color: rgba(200,168,75,0.4); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .card.dragging { opacity: .5; transform: rotate(1deg); cursor: grabbing; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
+  .card-titulo { font-family: var(--serif); font-size: .88rem; font-weight: 600; color: var(--white); line-height: 1.35; flex: 1; }
+  .card-menu-btn {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    font-size: 14px; padding: 0 2px; transition: color .15s; flex-shrink: 0;
+    line-height: 1;
+  }
+  .card-menu-btn:hover { color: var(--gold); }
+
+  .card-desc { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: .8rem; }
+
+  .card-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4rem; }
+  .card-responsable {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    background: rgba(200,168,75,0.08); border: 1px solid var(--border);
+    color: var(--gold); font-family: var(--mono);
+  }
+  .card-fecha { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .card-fecha.vencida { color: var(--danger); }
+  .card-fecha.hoy { color: var(--warn); }
+
+  .badge-prioridad {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .06em;
+    padding: 2px 7px; border-radius: 3px; font-weight: 600;
+    text-transform: uppercase;
+  }
+  .prio-alta   { background: rgba(224,85,85,0.12);  color: var(--danger); border: 1px solid rgba(224,85,85,0.3); }
+  .prio-media  { background: rgba(232,168,58,0.12); color: var(--warn);   border: 1px solid rgba(232,168,58,0.3); }
+  .prio-baja   { background: rgba(76,175,130,0.12); color: var(--ok);     border: 1px solid rgba(76,175,130,0.3); }
+
+  /* Acciones rápidas al hover */
+  .card-actions {
+    display: flex; gap: .4rem; margin-top: .7rem; padding-top: .6rem;
+    border-top: 1px solid var(--border);
+    opacity: 0; transition: opacity .15s;
+  }
+  .card:hover .card-actions { opacity: 1; }
+  .btn-mover {
+    flex: 1; padding: 3px 0; border-radius: 3px; border: 1px solid var(--border);
+    background: transparent; font-size: 10px; cursor: pointer; transition: all .15s;
+    font-family: var(--mono); color: var(--muted); text-align: center;
+  }
+  .btn-mover:hover { color: var(--gold); border-color: var(--gold); }
+  .btn-editar { color: var(--muted); }
+  .btn-editar:hover { color: var(--gold); border-color: var(--gold); }
+  .btn-eliminar { color: var(--muted); }
+  .btn-eliminar:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* AGREGAR TARJETA */
+  .btn-agregar-card {
+    width: 100%; padding: .6rem; background: transparent; border: 1px dashed rgba(200,168,75,0.2);
+    border-radius: 6px; color: var(--muted); font-family: var(--sans); font-size: 12px;
+    cursor: pointer; transition: all .15s; margin: 0 .8rem .8rem; width: calc(100% - 1.6rem);
+  }
+  .btn-agregar-card:hover { border-color: var(--gold); color: var(--gold); background: rgba(200,168,75,0.04); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--navy2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 2rem; width: 100%; max-width: 500px;
+    animation: modalIn .2s ease;
+  }
+  @keyframes modalIn { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+  .modal-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 700; color: var(--white); margin-bottom: 1.5rem; }
+  .modal-title span { color: var(--gold); font-style: italic; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+  .form-group { display: flex; flex-direction: column; gap: .3rem; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 10px; color: var(--muted); letter-spacing: .08em; font-family: var(--mono); text-transform: uppercase; }
+  input, select, textarea {
+    background: var(--navy3); border: 1px solid var(--border); color: var(--white);
+    padding: .5rem .8rem; border-radius: 4px;
+    font-family: var(--sans); font-size: 13px; outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  textarea { resize: vertical; min-height: 70px; }
+  select option { background: var(--navy2); }
+
+  .modal-actions { display: flex; gap: .7rem; justify-content: flex-end; margin-top: 1.5rem; }
+  .btn-cancel {
+    padding: .5rem 1.2rem; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--sans); font-size: 12px;
+    cursor: pointer; transition: all .15s;
+  }
+  .btn-cancel:hover { border-color: var(--muted); color: var(--white); }
+  .btn-save {
+    padding: .5rem 1.4rem; border-radius: 4px; border: none;
+    background: var(--gold); color: var(--navy); font-family: var(--sans); font-size: 12px; font-weight: 500;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-save:hover { background: #e8c96b; }
+  .btn-save:disabled { opacity: .5; cursor: default; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem; z-index: 200;
+    background: var(--navy3); border: 1px solid var(--gold);
+    color: var(--white); padding: .7rem 1.2rem; border-radius: 6px;
+    font-size: 12px; font-family: var(--sans);
+    opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .3s;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 4rem; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  .dot { animation: pulse 1.2s infinite; display: inline-block; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+
+  footer {
+    position: relative; z-index: 1; padding: 1.2rem 2.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-brand { font-family: var(--serif); font-size: 12px; color: var(--muted); }
+  .footer-ver { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .1em; }
+
+  @media(max-width:700px){
+    header,.page,footer { padding-left:1.2rem; padding-right:1.2rem; }
+    .board { flex-direction: column; }
+    .col { width: 100%; flex: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html">
+    <div class="brand-shield">D</div>
+    <div class="brand-text">
+      <h1>Dragone Seguros</h1>
+      <span>Sistema de gestión</span>
+    </div>
+  </a>
+  <div class="header-right">
+    <button class="btn-nueva" onclick="abrirModal()">+ Nueva tarea</button>
+    <a class="back-btn" href="index.html">← Inicio</a>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-top">
+    <div>
+      <div class="page-eyebrow">Módulo</div>
+      <div class="page-title">Tablero de <em>Tareas</em></div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-bar" id="filtros-responsable">
+    <span class="filtros-label">RESPONSABLE</span>
+  </div>
+
+  <!-- BOARD -->
+  <div class="board" id="board">
+    <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando tablero...</span></div>
+  </div>
+</div>
+
+<footer>
+  <span class="footer-brand">Dragone Seguros — Tablero de tareas</span>
+  <span class="footer-ver">v1.0 · 2025</span>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Nueva <span>tarea</span></div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Título *</label>
+        <input type="text" id="f-titulo" placeholder="¿Qué hay que hacer?">
+      </div>
+      <div class="form-group full">
+        <label>Descripción</label>
+        <textarea id="f-desc" placeholder="Detalles adicionales..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Responsable *</label>
+        <input type="text" id="f-responsable" placeholder="Nombre">
+      </div>
+      <div class="form-group">
+        <label>Prioridad</label>
+        <select id="f-prioridad">
+          <option value="Media">Media</option>
+          <option value="Alta">Alta</option>
+          <option value="Baja">Baja</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha límite</label>
+        <input type="date" id="f-fecha">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="f-estado">
+          <option value="Pendiente">Pendiente</option>
+          <option value="En progreso">En progreso</option>
+          <option value="Hecho">Hecho</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" id="btn-guardar" onclick="guardar()">Guardar tarea</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFydbgOT0KDGjMaiE8UrJF7LCVZH3hZzwCAO4QriMnDMjfRB5PVYzqSZMlDFwv8rt8/exec";
+
+  const COLUMNAS = [
+    { id: 'Pendiente',   label: 'Pendiente',   color: '#e8a83a' },
+    { id: 'En progreso', label: 'En progreso', color: '#7eb8f7' },
+    { id: 'Hecho',       label: 'Hecho',       color: '#4caf82' },
+  ];
+
+  const PRIO_COLOR = { Alta: '#e05555', Media: '#e8a83a', Baja: '#4caf82' };
+
+  let tareas = [];
+  let editandoId = null;
+  let filtroResp = 'todos';
+  let dragId = null;
+
+  // ── CARGA ──────────────────────────────────────────────────────────────────
+  async function cargarDatos() {
+    try {
+      const resp = await fetch(SCRIPT_URL + "?hoja=Tareas", { redirect: "follow" });
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const raw = await resp.json();
+
+      // Cols: Timestamp | Título | Descripción | Responsable | Prioridad | Fecha | Estado
+      tareas = raw.slice(1).map(row => ({
+        id:          String(row[0] || '').trim(),
+        titulo:      String(row[1] || '').trim(),
+        desc:        String(row[2] || '').trim(),
+        responsable: String(row[3] || '').trim(),
+        prioridad:   String(row[4] || 'Media').trim(),
+        fecha:       String(row[5] || '').trim(),
+        estado:      String(row[6] || 'Pendiente').trim(),
+      })).filter(r => r.titulo !== '');
+
+      renderFiltros();
+      renderBoard();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('board').innerHTML =
+        '<p style="color:var(--muted);padding:2rem">Error al cargar tareas. Verificá la conexión.</p>';
+    }
+  }
+
+  // ── FILTROS ────────────────────────────────────────────────────────────────
+  function getResponsables() {
+    return [...new Set(tareas.map(t => t.responsable).filter(Boolean))].sort();
+  }
+
+  function renderFiltros() {
+    const wrap = document.getElementById('filtros-responsable');
+    wrap.innerHTML = '<span class="filtros-label">RESPONSABLE</span>';
+    const btnT = mkFiltroBtn('Todos', filtroResp === 'todos', () => { filtroResp = 'todos'; renderBoard(); });
+    wrap.appendChild(btnT);
+    getResponsables().forEach(r => {
+      const btn = mkFiltroBtn(r, filtroResp === r, () => { filtroResp = r; renderBoard(); });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function mkFiltroBtn(label, active, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'filtro-btn' + (active ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = onClick;
+    return btn;
+  }
+
+  // ── BOARD ──────────────────────────────────────────────────────────────────
+  function renderBoard() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+
+    const filtradas = tareas.filter(t => filtroResp === 'todos' || t.responsable === filtroResp);
+
+    COLUMNAS.forEach(col => {
+      const cards = filtradas.filter(t => t.estado === col.id);
+      const colEl = document.createElement('div');
+      colEl.className = 'col';
+      colEl.dataset.estado = col.id;
+
+      // Header
+      colEl.innerHTML = `
+        <div class="col-header">
+          <div class="col-header-left">
+            <div class="col-dot" style="background:${col.color}"></div>
+            <span class="col-name">${col.label}</span>
+          </div>
+          <span class="col-count">${cards.length}</span>
+        </div>`;
+
+      // Cards container
+      const cardsEl = document.createElement('div');
+      cardsEl.className = 'col-cards';
+      cardsEl.dataset.estado = col.id;
+
+      cards.forEach(t => {
+        cardsEl.appendChild(mkCard(t, col));
+      });
+
+      // Drag events en columna
+      cardsEl.addEventListener('dragover', e => {
+        e.preventDefault();
+        cardsEl.classList.add('drag-over');
+      });
+      cardsEl.addEventListener('dragleave', () => cardsEl.classList.remove('drag-over'));
+      cardsEl.addEventListener('drop', async e => {
+        e.preventDefault();
+        cardsEl.classList.remove('drag-over');
+        if (dragId && col.id !== tareas.find(t => t.id === dragId)?.estado) {
+          await moverTarea(dragId, col.id);
+        }
+      });
+
+      colEl.appendChild(cardsEl);
+
+      // Botón agregar
+      const btnAdd = document.createElement('button');
+      btnAdd.className = 'btn-agregar-card';
+      btnAdd.textContent = '+ Agregar tarea';
+      btnAdd.onclick = () => abrirModal(null, col.id);
+      colEl.appendChild(btnAdd);
+
+      board.appendChild(colEl);
+    });
+  }
+
+  function mkCard(t, col) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.draggable = true;
+    card.dataset.id = t.id;
+    card.style.setProperty('--prioridad-color', PRIO_COLOR[t.prioridad] || 'var(--muted)');
+
+    // Fecha
+    let fechaHtml = '';
+    if (t.fecha) {
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const fd = new Date(t.fecha); fd.setHours(0,0,0,0);
+      const diff = Math.round((fd - hoy) / 86400000);
+      let cls = 'card-fecha';
+      let label = fmtFecha(t.fecha);
+      if (diff < 0) { cls += ' vencida'; label = '⚠ ' + label; }
+      else if (diff === 0) { cls += ' hoy'; label = '⏰ Hoy'; }
+      fechaHtml = `<span class="${cls}">${label}</span>`;
+    }
+
+    // Botones mover
+    const prevCol = COLUMNAS[COLUMNAS.findIndex(c => c.id === t.estado) - 1];
+    const nextCol = COLUMNAS[COLUMNAS.findIndex(c => c.id === t.estado) + 1];
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-titulo">${t.titulo}</div>
+        <span class="badge-prioridad prio-${t.prioridad.toLowerCase()}">${t.prioridad}</span>
+      </div>
+      ${t.desc ? `<div class="card-desc">${t.desc}</div>` : ''}
+      <div class="card-meta">
+        ${t.responsable ? `<span class="card-responsable">${t.responsable}</span>` : ''}
+        ${fechaHtml}
+      </div>
+      <div class="card-actions">
+        ${prevCol ? `<button class="btn-mover" onclick="moverTarea('${t.id}','${prevCol.id}')">← ${prevCol.label}</button>` : '<span></span>'}
+        <button class="btn-mover btn-editar" onclick="editarTarea('${t.id}')">✎ Editar</button>
+        <button class="btn-mover btn-eliminar" onclick="eliminarTarea('${t.id}')">✕</button>
+        ${nextCol ? `<button class="btn-mover" onclick="moverTarea('${t.id}','${nextCol.id}')">${nextCol.label} →</button>` : '<span></span>'}
+      </div>`;
+
+    // Drag
+    card.addEventListener('dragstart', () => {
+      dragId = t.id;
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => {
+      dragId = null;
+      card.classList.remove('dragging');
+    });
+
+    return card;
+  }
+
+  // ── MOVER TAREA ────────────────────────────────────────────────────────────
+  async function moverTarea(id, nuevoEstado) {
+    const t = tareas.find(x => x.id === id);
+    if (!t) return;
+    const estadoAnterior = t.estado;
+    t.estado = nuevoEstado;
+    renderBoard();
+    try {
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminar', id }) });
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+        action: 'agregar_tarea',
+        id, titulo: t.titulo, desc: t.desc,
+        responsable: t.responsable, prioridad: t.prioridad,
+        fecha: t.fecha, estado: nuevoEstado
+      })});
+      mostrarToast('Tarea movida a ' + nuevoEstado);
+      setTimeout(() => cargarDatos(), 1500);
+    } catch(e) {
+      t.estado = estadoAnterior;
+      renderBoard();
+      mostrarToast('Error al mover la tarea');
+    }
+  }
+
+  // ── MODAL ──────────────────────────────────────────────────────────────────
+  function abrirModal(id, estadoDefault) {
+    editandoId = id || null;
+    if (id) {
+      const t = tareas.find(x => x.id === id);
+      document.getElementById('modal-title').innerHTML = 'Editar <span>tarea</span>';
+      document.getElementById('f-titulo').value      = t.titulo;
+      document.getElementById('f-desc').value        = t.desc;
+      document.getElementById('f-responsable').value = t.responsable;
+      document.getElementById('f-prioridad').value   = t.prioridad;
+      document.getElementById('f-fecha').value       = t.fecha;
+      document.getElementById('f-estado').value      = t.estado;
+    } else {
+      document.getElementById('modal-title').innerHTML = 'Nueva <span>tarea</span>';
+      ['f-titulo','f-desc','f-responsable','f-fecha'].forEach(x => document.getElementById(x).value = '');
+      document.getElementById('f-prioridad').value = 'Media';
+      document.getElementById('f-estado').value    = estadoDefault || 'Pendiente';
+    }
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function editarTarea(id) { abrirModal(id); }
+
+  function cerrarModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    editandoId = null;
+  }
+
+  async function guardar() {
+    const titulo      = document.getElementById('f-titulo').value.trim();
+    const responsable = document.getElementById('f-responsable').value.trim();
+    if (!titulo || !responsable) { mostrarToast('Completá Título y Responsable'); return; }
+
+    const btn = document.getElementById('btn-guardar');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+
+    const payload = {
+      titulo,
+      desc:        document.getElementById('f-desc').value.trim(),
+      responsable,
+      prioridad:   document.getElementById('f-prioridad').value,
+      fecha:       document.getElementById('f-fecha').value,
+      estado:      document.getElementById('f-estado').value,
+    };
+
+    try {
+      if (editandoId) {
+        await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminar', id: editandoId }) });
+        payload.id = editandoId;
+      }
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'agregar_tarea', ...payload }) });
+      cerrarModal();
+      mostrarToast(editandoId ? 'Tarea actualizada ✓' : 'Tarea creada ✓');
+      setTimeout(() => cargarDatos(), 1500);
+    } catch(e) { mostrarToast('Error al guardar'); }
+
+    btn.disabled = false; btn.textContent = 'Guardar tarea';
+  }
+
+  async function eliminarTarea(id) {
+    const t = tareas.find(x => x.id === id);
+    if (!confirm(`¿Eliminás la tarea "${t.titulo}"?`)) return;
+    try {
+      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'eliminar', id }) });
+      mostrarToast('Tarea eliminada');
+      setTimeout(() => cargarDatos(), 1500);
+    } catch(e) { mostrarToast('Error al eliminar'); }
+  }
+
+  function fmtFecha(str) {
+    if (!str) return '';
+    const d = new Date(str);
+    if (isNaN(d)) return str;
+    return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModal();
+  });
+
+  cargarDatos();
+</script>
+</body>
+</html>
