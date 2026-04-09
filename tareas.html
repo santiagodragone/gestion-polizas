@@ -403,11 +403,14 @@ async function guardar() {
 
   try {
     if (editandoId) {
-      // Edición: eliminar fila vieja y crear nueva con mismo ID
-      await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'eliminar', id: editandoId }) });
-      payload.id = editandoId;
-    }
-    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'agregar_tarea', ...payload }) });
+  await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ 
+    action:'actualizar_tarea', 
+    id: editandoId,
+    ...payload 
+  }) });
+} else {
+  await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'agregar_tarea', ...payload }) });
+}
     cerrarModal();
     mostrarToast(editandoId ? 'Tarea actualizada ✓' : 'Tarea creada ✓');
     setTimeout(() => cargarDatos(), 1200);
