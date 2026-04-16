@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguros Dragone — Sistema de Gestión</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:#0d1b2a;--navy2:#162032;--navy3:#1e2d42;--blue:#1a4a7a;
+    --gold:#c8a84b;--gold2:#e8c96b;--white:#f5f2eb;--muted:#8a9bb0;
+    --border:rgba(200,168,75,0.18);--danger:#e05555;
+    --serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--navy);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 0%,rgba(200,168,75,0.08) 0%,transparent 55%),radial-gradient(ellipse at 90% 100%,rgba(26,74,122,0.25) 0%,transparent 55%);pointer-events:none;z-index:0;}
+
+  /* ── LOGIN ── */
+  #login-screen {
+    position:fixed;inset:0;z-index:1000;
+    background:var(--navy);
+    display:flex;align-items:center;justify-content:center;padding:1rem;
+  }
+  .login-card {
+    background:var(--navy2);border:1px solid var(--border);border-radius:14px;
+    padding:2.5rem 2.5rem 2rem;width:100%;max-width:380px;
+    animation:fadeUp .4s ease;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .login-logo{display:flex;align-items:center;gap:12px;margin-bottom:2rem;}
+  .login-shield{width:44px;height:44px;clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:rgba(200,168,75,0.1);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold);}
+  .login-brand h1{font-family:var(--serif);font-size:1.05rem;font-weight:600;color:var(--white);}
+  .login-brand span{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;}
+  .login-title{font-family:var(--serif);font-size:1.4rem;font-weight:700;color:var(--white);margin-bottom:.4rem;}
+  .login-title em{font-style:italic;color:var(--gold);}
+  .login-sub{font-size:12px;color:var(--muted);margin-bottom:1.8rem;}
+  .login-group{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;}
+  .login-group label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+  .login-group input{background:var(--navy3);border:1px solid var(--border);color:var(--white);padding:.6rem .9rem;border-radius:6px;font-family:var(--sans);font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+  .login-group input:focus{border-color:var(--gold);}
+  .login-group input::placeholder{color:var(--muted);}
+  .login-error{font-size:12px;color:var(--danger);margin-bottom:.8rem;display:none;padding:.5rem .8rem;background:rgba(224,85,85,0.08);border:1px solid rgba(224,85,85,0.2);border-radius:4px;}
+  .login-error.show{display:block;}
+  .btn-login{width:100%;padding:.7rem;border-radius:6px;border:none;background:var(--gold);color:var(--navy);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:.5rem;}
+  .btn-login:hover{background:var(--gold2);}
+  .btn-login:disabled{opacity:.6;cursor:default;}
+  .login-footer{text-align:center;margin-top:1.5rem;font-size:11px;color:var(--muted);}
+
+  /* ── SISTEMA ── */
+  #sistema{display:none;}
+  header{position:relative;z-index:10;padding:1.4rem 2.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(13,27,42,0.95);}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-shield{width:42px;height:42px;border:1.5px solid var(--gold);clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:rgba(200,168,75,0.08);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold);}
+  .brand-text h1{font-family:var(--serif);font-size:1.05rem;font-weight:600;letter-spacing:0.04em;color:var(--white);}
+  .brand-text span{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;display:block;margin-top:1px;}
+  .header-right{display:flex;align-items:center;gap:1.2rem;}
+  .date-tag{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;border:1px solid var(--border);padding:4px 10px;border-radius:3px;}
+  .user-pill{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 6px;border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--muted);}
+  .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--navy);font-family:var(--serif);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .btn-logout{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);padding:4px 10px;border-radius:3px;background:transparent;cursor:pointer;transition:all .15s;}
+  .btn-logout:hover{color:var(--danger);border-color:var(--danger);}
+  .divider{position:relative;z-index:1;height:1px;margin:0 2.5rem;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0.3;}
+  .hero{position:relative;z-index:1;padding:3.5rem 2.5rem 2rem;}
+  .hero-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:0.8rem;display:flex;align-items:center;gap:10px;}
+  .hero-eyebrow::before{content:'';display:inline-block;width:30px;height:1px;background:var(--gold);}
+  .hero h2{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;line-height:1.2;color:var(--white);margin-bottom:0.8rem;}
+  .hero h2 em{font-style:italic;color:var(--gold);}
+  .hero p{font-size:14px;color:var(--muted);font-weight:300;line-height:1.7;max-width:480px;}
+  .modules-wrap{position:relative;z-index:1;padding:0 2.5rem 3rem;}
+  .section-bar{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;}
+  .section-bar-line{flex:1;height:1px;background:var(--border);}
+  .section-bar-label{font-family:var(--mono);font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);}
+  .modules-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .mod{background:var(--navy2);padding:1.8rem 1.6rem;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:1rem;transition:background 0.2s;position:relative;overflow:hidden;cursor:pointer;animation:rise 0.5s ease both;}
+  .mod:nth-child(1){animation-delay:.04s}.mod:nth-child(2){animation-delay:.09s}.mod:nth-child(3){animation-delay:.14s}.mod:nth-child(4){animation-delay:.19s}.mod:nth-child(5){animation-delay:.24s}.mod:nth-child(6){animation-delay:.29s}.mod:nth-child(7){animation-delay:.34s}.mod:nth-child(8){animation-delay:.39s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  .mod::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform 0.22s ease;}
+  .mod:hover{background:var(--navy3);}
+  .mod:hover::after{transform:scaleX(1);}
+  .mod.ready{background:var(--navy3);}
+  .mod.ready::after{transform:scaleX(1);}
+  .mod.soon{opacity:0.5;cursor:default;}
+  .mod.soon:hover{background:var(--navy2);}
+  .mod.soon::after{display:none;}
+  .mod-icon{width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:rgba(200,168,75,0.06);display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .mod-name{font-family:var(--serif);font-size:.95rem;font-weight:600;color:var(--white);line-height:1.3;}
+  .mod-desc{font-size:11px;color:var(--muted);font-weight:300;line-height:1.5;}
+  .mod-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;}
+  .mod-badge{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:2px;}
+  .badge-live{background:rgba(200,168,75,0.12);color:var(--gold);}
+  .badge-soon{background:rgba(138,155,176,0.1);color:var(--muted);}
+  .mod-arrow{font-size:13px;color:var(--muted);transition:transform 0.18s,color 0.18s;}
+  .mod:hover .mod-arrow{transform:translateX(4px);color:var(--gold);}
+  footer{position:relative;z-index:1;padding:1.2rem 2.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .footer-brand{font-family:var(--serif);font-size:12px;color:var(--muted);}
+  .footer-ver{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;}
+  @media(max-width:900px){header,.hero,.modules-wrap,footer{padding-left:1.2rem;padding-right:1.2rem;}.modules-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:500px){.modules-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-shield">D</div>
+      <div class="login-brand">
+        <h1>Seguros Dragone</h1>
+        <span>Sistema de gestión</span>
+      </div>
+    </div>
+    <div class="login-title">Bienvenido de <em>vuelta</em></div>
+    <div class="login-sub">Ingresá tus credenciales para acceder al sistema.</div>
+    <div class="login-group">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="Usuario" autocomplete="username">
+    </div>
+    <div class="login-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password">
+    </div>
+    <div class="login-error" id="login-error">Usuario o contraseña incorrectos.</div>
+    <button class="btn-login" id="btn-login" onclick="intentarLogin()">Ingresar al sistema</button>
+    <div class="login-footer">Seguros Dragone · Acceso restringido</div>
+  </div>
+</div>
+
+<!-- SISTEMA PRINCIPAL -->
+<div id="sistema">
+  <header>
+    <div class="brand">
+      <div class="brand-shield">D</div>
+      <div class="brand-text"><h1>Seguros Dragone</h1><span>Sistema de gestión interno</span></div>
+    </div>
+    <div class="header-right">
+      <span class="date-tag" id="fecha-hoy"></span>
+      <div class="user-pill"><div class="user-avatar">E</div>Equipo Dragone</div>
+      <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
+    </div>
+  </header>
+
+  <div class="divider"></div>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Panel principal</div>
+    <h2>Bienvenido,<br><em>Seguros Dragone</em></h2>
+    <p>Más de 30 años protegiendo el futuro de tus clientes. Gestioná tu cartera desde un solo lugar.</p>
+  </div>
+
+  <div class="modules-wrap">
+    <div class="section-bar">
+      <div class="section-bar-line"></div>
+      <div class="section-bar-label">Módulos del sistema</div>
+      <div class="section-bar-line"></div>
+    </div>
+    <div class="modules-grid">
+
+      <a class="mod ready" href="ventas.html">
+        <div class="mod-icon">📊</div>
+        <div><div class="mod-name">Ventas</div><div class="mod-desc">Registro y seguimiento de cotizaciones y pólizas emitidas.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="tareas.html">
+        <div class="mod-icon">✅</div>
+        <div><div class="mod-name">Tablero de tareas</div><div class="mod-desc">Gestión de pendientes y seguimiento diario del equipo.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="gestion_polizas.html">
+        <div class="mod-icon">💳</div>
+        <div><div class="mod-name">Cobranzas por cupón</div><div class="mod-desc">Avisos de vencimiento y envío masivo por WhatsApp.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="indicadores.html">
+        <div class="mod-icon">📈</div>
+        <div><div class="mod-name">Indicadores</div><div class="mod-desc">Dashboard con métricas clave de la productora.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="siniestros.html">
+        <div class="mod-icon">🚗</div>
+        <div><div class="mod-name">Siniestros</div><div class="mod-desc">Seguimiento y gestión de denuncias y expedientes.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="contactos.html">
+        <div class="mod-icon">🏢</div>
+        <div><div class="mod-name">Contactos de compañías</div><div class="mod-desc">Directorio de aseguradoras, ejecutivos y canales.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="comisiones.html">
+        <div class="mod-icon">💰</div>
+        <div><div class="mod-name">Comisiones</div><div class="mod-desc">Liquidación y seguimiento de comisiones por cobrador y compañía.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+      <a class="mod ready" href="renovaciones.html">
+        <div class="mod-icon">🔄</div>
+        <div><div class="mod-name">Renovaciones</div><div class="mod-desc">Control y seguimiento de renovaciones enviadas por WhatsApp.</div></div>
+        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <footer>
+    <span class="footer-brand">Seguros Dragone — Sistema interno</span>
+    <span class="footer-ver">v1.0 · 2025</span>
+  </footer>
+</div>
+
+<script>
+  const USUARIO  = "EquipoDragone";
+  const PASSWORD = "Rober1347";
+  const SESSION_KEY = "sd_auth";
+  const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 horas
+
+  function verificarSesion() {
+    const session = localStorage.getItem(SESSION_KEY);
+    if (!session) return false;
+    const { ts } = JSON.parse(session);
+    return (Date.now() - ts) < SESSION_DURATION;
+  }
+
+  function intentarLogin() {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    const err  = document.getElementById('login-error');
+    const btn  = document.getElementById('btn-login');
+
+    if (user === USUARIO && pass === PASSWORD) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
+      err.classList.remove('show');
+      btn.textContent = 'Ingresando...';
+      btn.disabled = true;
+      setTimeout(() => mostrarSistema(), 400);
+    } else {
+      err.classList.add('show');
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+    }
+  }
+
+  function mostrarSistema() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('sistema').style.display = 'block';
+    const d = new Date();
+    const dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const meses  = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+    document.getElementById('fecha-hoy').textContent = dias[d.getDay()].toUpperCase()+' '+d.getDate()+' '+meses[d.getMonth()]+' '+d.getFullYear();
+  }
+
+  function cerrarSesion() {
+    if (confirm('¿Cerrar sesión?')) {
+      localStorage.removeItem(SESSION_KEY);
+      location.reload();
+    }
+  }
+
+  // Enter en los campos
+  ['login-user','login-pass'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') intentarLogin();
+    });
+  });
+
+  // Verificar sesión al cargar
+  if (verificarSesion()) {
+    mostrarSistema();
+  }
+</script>
+</body>
+</html>
