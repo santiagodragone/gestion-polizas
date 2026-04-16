@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indicadores — Dragone Seguros</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy:#0d1b2a;--navy2:#162032;--navy3:#1e2d42;
+    --gold:#c8a84b;--white:#f5f2eb;--muted:#8a9bb0;--border:rgba(200,168,75,0.18);
+    --danger:#e05555;--ok:#4caf82;--warn:#e8a83a;--info:#5b9bd5;
+    --serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--navy);color:var(--white);font-family:var(--sans);min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 0%,rgba(200,168,75,0.07) 0%,transparent 50%),radial-gradient(ellipse at 90% 100%,rgba(26,74,122,0.18) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+  header{position:relative;z-index:10;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);background:rgba(13,27,42,0.97);display:flex;align-items:center;justify-content:space-between;}
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;}
+  .brand-shield{width:36px;height:36px;clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:rgba(200,168,75,0.1);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold);}
+  .brand-text h1{font-family:var(--serif);font-size:.95rem;font-weight:600;color:var(--white);}
+  .brand-text span{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;}
+  .header-right{display:flex;align-items:center;gap:.8rem;}
+  .back-btn{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);padding:5px 12px;border-radius:3px;text-decoration:none;transition:color .2s,border-color .2s;}
+  .back-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .btn-refresh{padding:.4rem 1rem;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;letter-spacing:.08em;}
+  .btn-refresh:hover{border-color:var(--gold);color:var(--gold);}
+
+  .page{position:relative;z-index:1;padding:2rem 2.5rem 3rem;}
+  .page-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:8px;}
+  .page-eyebrow::before{content:'';width:24px;height:1px;background:var(--gold);display:inline-block;}
+  .page-title{font-family:var(--serif);font-size:clamp(1.4rem,3vw,2rem);font-weight:700;margin-bottom:.3rem;}
+  .page-title em{font-style:italic;color:var(--gold);}
+  .page-subtitle{font-size:12px;color:var(--muted);margin-bottom:2rem;}
+  .last-update{font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+  /* SECCIÓN */
+  .section{margin-bottom:2.5rem;}
+  .section-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--border);}
+  .section-dot{width:8px;height:8px;border-radius:50%;}
+  .section-title{font-family:var(--serif);font-size:1rem;font-weight:600;color:var(--white);}
+
+  /* CARDS DE MÉTRICAS */
+  .metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.2rem;}
+  .metric{background:var(--navy2);padding:1.2rem 1.4rem;}
+  .metric-val{font-family:var(--serif);font-size:2rem;font-weight:600;line-height:1;margin-bottom:.3rem;}
+  .metric-lbl{font-size:11px;color:var(--muted);}
+  .c-gold{color:var(--gold);}
+  .c-ok{color:var(--ok);}
+  .c-warn{color:var(--warn);}
+  .c-danger{color:var(--danger);}
+  .c-info{color:var(--info);}
+
+  /* CHARTS */
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .chart-card{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:1.2rem;}
+  .chart-title{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;}
+  .chart-wrap{position:relative;height:180px;}
+
+  /* LOADING */
+  .loading{text-align:center;padding:4rem;color:var(--muted);font-family:var(--mono);font-size:12px;}
+  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+  .dot{animation:pulse 1.2s infinite;display:inline-block;}
+  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+
+  footer{position:relative;z-index:1;padding:1.2rem 2.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .footer-brand{font-family:var(--serif);font-size:12px;color:var(--muted);}
+  .footer-ver{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;}
+
+  @media(max-width:700px){
+    header,.page,footer{padding-left:1.2rem;padding-right:1.2rem;}
+    .charts-row{grid-template-columns:1fr;}
+    .metrics-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="index.html">
+    <div class="brand-shield">D</div>
+    <div class="brand-text"><h1>Seguros Dragone</h1><span>Sistema de gestión</span></div>
+  </a>
+  <div class="header-right">
+    <button class="btn-refresh" onclick="cargarTodo()">↻ Actualizar</button>
+    <a class="back-btn" href="index.html">← Inicio</a>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-eyebrow">Módulo</div>
+  <div class="page-title">Dashboard de <em>Indicadores</em></div>
+  <div class="page-subtitle last-update" id="last-update">Cargando datos...</div>
+
+  <div id="contenido">
+    <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando indicadores...</span></div>
+  </div>
+</div>
+
+<footer>
+  <span class="footer-brand">Seguros Dragone — Indicadores</span>
+  <span class="footer-ver">v1.0 · 2025</span>
+</footer>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFydbgOT0KDGjMaiE8UrJF7LCVZH3hZzwCAO4QriMnDMjfRB5PVYzqSZMlDFwv8rt8/exec";
+
+let charts = [];
+
+async function fetchHoja(hoja) {
+  try {
+    const r = await fetch(SCRIPT_URL + '?hoja=' + hoja + '&t=' + Date.now());
+    const raw = await r.json();
+    return raw.slice(1).filter(row => row.some(c => String(c).trim() !== ''));
+  } catch(e) { return []; }
+}
+
+async function cargarTodo() {
+  document.getElementById('contenido').innerHTML = '<div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando indicadores...</span></div>';
+  charts.forEach(c => c.destroy());
+  charts = [];
+
+  const [cobranzas, siniestros, renovaciones, tareas, ventas] = await Promise.all([
+    fetchHoja('Cobranzas'),
+    fetchHoja('Siniestros'),
+    fetchHoja('Renovaciones'),
+    fetchHoja('Tareas'),
+    fetchHoja('Ventas'),
+  ]);
+
+  renderDashboard(cobranzas, siniestros, renovaciones, tareas, ventas);
+  document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
+}
+
+function renderDashboard(cobranzas, siniestros, renovaciones, tareas, ventas) {
+  // ── COBRANZAS ──
+  // Cols: ID | Nombre | WhatsApp | Compañía | Póliza | Monto | Vencimiento | Días | Estado | Enviado WPP | Link
+  const cob_total    = cobranzas.length;
+  const cob_enviados = cobranzas.filter(r => {
+    const v = String(r[9]||'').toLowerCase();
+    return v === 'sí' || v === 'si' || v === 'yes';
+  }).length;
+  const cob_urgentes = cobranzas.filter(r => String(r[8]||'').toLowerCase().includes('urgente')).length;
+  const cob_proximos = cobranzas.filter(r => {
+    const e = String(r[8]||'').toLowerCase();
+    return e.includes('pr') || e.includes('pagar') || e.includes('pago');
+  }).length;
+  const cob_pendientes = cob_total - cob_enviados;
+
+  // ── SINIESTROS ──
+  // Cols: id | asegurado | poliza | ramo | cobertura | compania | fechaSin | fechaDen | estado | checks | notas
+  const sin_total    = siniestros.length;
+  const sin_abiertos = siniestros.filter(r => String(r[8]||'') === 'Abierto').length;
+  const sin_proceso  = siniestros.filter(r => String(r[8]||'') === 'En proceso').length;
+  const sin_pend     = siniestros.filter(r => String(r[8]||'') === 'Pendiente info').length;
+  const sin_cerrados = siniestros.filter(r => String(r[8]||'') === 'Cerrado').length;
+
+  // ── RENOVACIONES ──
+  // Cols: id | mes | compania | asegurado | poliza | renovador | producto | enviada | obs
+  const ren_total   = renovaciones.length;
+  const ren_enviadas = renovaciones.filter(r => String(r[7]||'') === 'Sí').length;
+  const ren_pend    = renovaciones.filter(r => String(r[7]||'') === 'Pendiente').length;
+  const ren_no      = renovaciones.filter(r => String(r[7]||'') === 'No').length;
+
+  // ── TAREAS ──
+  // Cols: id | titulo | desc | responsable | prioridad | fecha | estado | notas
+  const tar_total   = tareas.length;
+  const tar_pend    = tareas.filter(r => String(r[6]||'') === 'Pendiente').length;
+  const tar_proceso = tareas.filter(r => String(r[6]||'') === 'En progreso').length;
+  const tar_hecho   = tareas.filter(r => String(r[6]||'') === 'Hecho').length;
+
+  // ── VENTAS ──
+  // Cols: mes | fecha | operador | productor | asegurado | riesgo | compania | prima | premio | tipo | fechaCoti | fechaEmision
+  const ven_total = ventas.length;
+  const mesesVentas = {};
+  ventas.forEach(r => {
+    const mes = String(r[0]||'Sin mes');
+    mesesVentas[mes] = (mesesVentas[mes]||0) + 1;
+  });
+
+  // ── RENDER HTML ──
+  let html = '';
+
+  // COBRANZAS
+  html += `
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot" style="background:var(--info)"></div>
+      <span class="section-title">Cobranzas</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-val c-gold">${cob_total}</div><div class="metric-lbl">Total clientes</div></div>
+      <div class="metric"><div class="metric-val c-ok">${cob_enviados}</div><div class="metric-lbl">WPP enviados</div></div>
+      <div class="metric"><div class="metric-val c-warn">${cob_pendientes}</div><div class="metric-lbl">Sin enviar</div></div>
+      <div class="metric"><div class="metric-val c-danger">${cob_urgentes}</div><div class="metric-lbl">Urgentes</div></div>
+      <div class="metric"><div class="metric-val c-warn">${cob_proximos}</div><div class="metric-lbl">Próximos</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">Estado de envíos</div><div class="chart-wrap"><canvas id="chart-cob-pie"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Urgencia de vencimientos</div><div class="chart-wrap"><canvas id="chart-cob-bar"></canvas></div></div>
+    </div>
+  </div>`;
+
+  // SINIESTROS
+  html += `
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot" style="background:var(--warn)"></div>
+      <span class="section-title">Siniestros</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-val c-gold">${sin_total}</div><div class="metric-lbl">Total siniestros</div></div>
+      <div class="metric"><div class="metric-val c-warn">${sin_abiertos}</div><div class="metric-lbl">Abiertos</div></div>
+      <div class="metric"><div class="metric-val c-info">${sin_proceso}</div><div class="metric-lbl">En proceso</div></div>
+      <div class="metric"><div class="metric-val c-danger">${sin_pend}</div><div class="metric-lbl">Pendiente info</div></div>
+      <div class="metric"><div class="metric-val c-ok">${sin_cerrados}</div><div class="metric-lbl">Cerrados</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">Distribución por estado</div><div class="chart-wrap"><canvas id="chart-sin-pie"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Abiertos vs cerrados</div><div class="chart-wrap"><canvas id="chart-sin-bar"></canvas></div></div>
+    </div>
+  </div>`;
+
+  // RENOVACIONES
+  html += `
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot" style="background:var(--ok)"></div>
+      <span class="section-title">Renovaciones</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-val c-gold">${ren_total}</div><div class="metric-lbl">Total renovaciones</div></div>
+      <div class="metric"><div class="metric-val c-ok">${ren_enviadas}</div><div class="metric-lbl">WPP enviado</div></div>
+      <div class="metric"><div class="metric-val c-warn">${ren_pend}</div><div class="metric-lbl">Pendientes</div></div>
+      <div class="metric"><div class="metric-val c-danger">${ren_no}</div><div class="metric-lbl">Sin enviar</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">Estado de WPP</div><div class="chart-wrap"><canvas id="chart-ren-pie"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Enviados vs pendientes</div><div class="chart-wrap"><canvas id="chart-ren-bar"></canvas></div></div>
+    </div>
+  </div>`;
+
+  // TAREAS
+  html += `
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot" style="background:var(--gold)"></div>
+      <span class="section-title">Tareas</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-val c-gold">${tar_total}</div><div class="metric-lbl">Total tareas</div></div>
+      <div class="metric"><div class="metric-val c-danger">${tar_pend}</div><div class="metric-lbl">Pendientes</div></div>
+      <div class="metric"><div class="metric-val c-info">${tar_proceso}</div><div class="metric-lbl">En progreso</div></div>
+      <div class="metric"><div class="metric-val c-ok">${tar_hecho}</div><div class="metric-lbl">Hechas</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card"><div class="chart-title">Estado de tareas</div><div class="chart-wrap"><canvas id="chart-tar-pie"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Progreso del equipo</div><div class="chart-wrap"><canvas id="chart-tar-bar"></canvas></div></div>
+    </div>
+  </div>`;
+
+  // VENTAS
+  const mesLabels = Object.keys(mesesVentas);
+  const mesVals   = Object.values(mesesVentas);
+  html += `
+  <div class="section">
+    <div class="section-header">
+      <div class="section-dot" style="background:var(--danger)"></div>
+      <span class="section-title">Ventas</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric"><div class="metric-val c-gold">${ven_total}</div><div class="metric-lbl">Total ventas</div></div>
+      ${mesLabels.slice(-3).map(m => `<div class="metric"><div class="metric-val c-info">${mesesVentas[m]}</div><div class="metric-lbl">${m}</div></div>`).join('')}
+    </div>
+    <div class="charts-row">
+      <div class="chart-card" style="grid-column:1/-1"><div class="chart-title">Ventas por mes</div><div class="chart-wrap" style="height:200px"><canvas id="chart-ven-bar"></canvas></div></div>
+    </div>
+  </div>`;
+
+  document.getElementById('contenido').innerHTML = html;
+
+  // ── CHARTS ──
+  const chartDefaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#8a9bb0', font: { size: 11 } } } }
+  };
+
+  const pieColors = ['#c8a84b','#4caf82','#e8a83a','#e05555','#5b9bd5'];
+
+  function mkPie(id, labels, data) {
+    const c = new Chart(document.getElementById(id), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: pieColors, borderWidth: 0 }] },
+      options: { ...chartDefaults, cutout: '60%' }
+    });
+    charts.push(c);
+  }
+
+  function mkBar(id, labels, datasets) {
+    const c = new Chart(document.getElementById(id), {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        ...chartDefaults,
+        scales: {
+          x: { ticks: { color: '#8a9bb0', font: { size: 10 } }, grid: { color: 'rgba(200,168,75,0.08)' } },
+          y: { ticks: { color: '#8a9bb0', font: { size: 10 } }, grid: { color: 'rgba(200,168,75,0.08)' }, beginAtZero: true }
+        },
+        plugins: { legend: { display: datasets.length > 1, labels: { color: '#8a9bb0', font: { size: 11 } } } }
+      }
+    });
+    charts.push(c);
+  }
+
+  // Cobranzas
+  mkPie('chart-cob-pie', ['Enviados','Sin enviar'], [cob_enviados, cob_pendientes]);
+  mkBar('chart-cob-bar', ['Urgentes','Próximos','Al día'], [{
+    data: [cob_urgentes, cob_proximos, cob_total - cob_urgentes - cob_proximos],
+    backgroundColor: ['#e05555','#e8a83a','#4caf82'], borderRadius: 4
+  }]);
+
+  // Siniestros
+  mkPie('chart-sin-pie', ['Abiertos','En proceso','Pend. info','Cerrados'], [sin_abiertos, sin_proceso, sin_pend, sin_cerrados]);
+  mkBar('chart-sin-bar', ['Abiertos','En proceso','Cerrados'], [{
+    data: [sin_abiertos, sin_proceso, sin_cerrados],
+    backgroundColor: ['#e8a83a','#5b9bd5','#4caf82'], borderRadius: 4
+  }]);
+
+  // Renovaciones
+  mkPie('chart-ren-pie', ['Enviadas','Pendientes','Sin enviar'], [ren_enviadas, ren_pend, ren_no]);
+  mkBar('chart-ren-bar', ['Enviadas','Pendientes','Sin enviar'], [{
+    data: [ren_enviadas, ren_pend, ren_no],
+    backgroundColor: ['#4caf82','#e8a83a','#e05555'], borderRadius: 4
+  }]);
+
+  // Tareas
+  mkPie('chart-tar-pie', ['Pendientes','En progreso','Hechas'], [tar_pend, tar_proceso, tar_hecho]);
+  mkBar('chart-tar-bar', ['Pendientes','En progreso','Hechas'], [{
+    data: [tar_pend, tar_proceso, tar_hecho],
+    backgroundColor: ['#e05555','#5b9bd5','#4caf82'], borderRadius: 4
+  }]);
+
+  // Ventas
+  if (mesLabels.length > 0) {
+    mkBar('chart-ven-bar', mesLabels, [{
+      label: 'Ventas',
+      data: mesVals,
+      backgroundColor: '#c8a84b', borderRadius: 4
+    }]);
+  }
+}
+
+cargarTodo();
+</script>
+</body>
+</html>
