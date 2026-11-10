@@ -101,7 +101,7 @@
 
 <footer>
   <span class="footer-brand">Seguros Dragone — Indicadores</span>
-  <span class="footer-ver">v1.0 · 2025</span>
+  <span class="footer-ver">v1.1 · 2026</span>
 </footer>
 
 <script>
@@ -122,33 +122,78 @@ async function cargarTodo() {
   charts.forEach(c => c.destroy());
   charts = [];
 
-  const [cobranzas, siniestros, renovaciones, tareas, ventas] = await Promise.all([
-    fetchHoja('Cobranzas'),
+  const [cupones, cupEstados, repCobranza, siniestros, renovaciones, tareas, ventas] = await Promise.all([
+    fetchHoja('Cupones'),
+    fetchHoja('CuponesEstado'),
+    fetchHoja('ReporteCobranza'),
     fetchHoja('Siniestros'),
     fetchHoja('Renovaciones'),
     fetchHoja('Tareas'),
     fetchHoja('Ventas'),
   ]);
 
-  renderDashboard(cobranzas, siniestros, renovaciones, tareas, ventas);
+  renderDashboard(analizarCobranza(cupones, cupEstados, repCobranza), siniestros, renovaciones, tareas, ventas);
   document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
 }
 
-function renderDashboard(cobranzas, siniestros, renovaciones, tareas, ventas) {
-  // ── COBRANZAS ──
-  // Cols: ID | Nombre | WhatsApp | Compañía | Póliza | Monto | Vencimiento | Días | Estado | Enviado WPP | Link
-  const cob_total    = cobranzas.length;
-  const cob_enviados = cobranzas.filter(r => {
-    const v = String(r[9]||'').toLowerCase();
-    return v === 'sí' || v === 'si' || v === 'yes';
-  }).length;
-  const cob_urgentes = cobranzas.filter(r => String(r[8]||'').toLowerCase().includes('urgente')).length;
-  const cob_proximos = cobranzas.filter(r => {
-    const e = String(r[8]||'').toLowerCase();
-    return e.includes('pr') || e.includes('pagar') || e.includes('pago');
-  }).length;
-  const cob_pendientes = cob_total - cob_enviados;
+// ── COBRANZA EN TIEMPO REAL ──────────────────────────────────────────────────
+// Misma lógica que el módulo de Cobranza: cada cupón vence todos los meses el mismo día
+// (o el último día del mes si el mes es más corto) y su estado se guarda por mes.
+// Cupones:        ID | Cliente | WhatsApp | Compañía | Póliza | Ramo | Día | Activo | Notas | Alta
+// CuponesEstado:  Clave | ID | Periodo | Aviso | FechaAviso | Pagado | FechaPago
+// ReporteCobranza: Clave | Periodo | Compañía | Emitida | Cobrada | Notas
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function analizarCobranza(cupones, cupEstados, repCobranza) {
+  const esSi = v => ['sí','si','true','yes'].includes(String(v).trim().toLowerCase());
+  const fecha = v => { const x = String(v||'').match(/(\d{4})-(\d{2})-(\d{2})/); return x ? new Date(+x[1], +x[2]-1, +x[3]) : null; };
+  const normPer = v => { const x = String(v||'').match(/(\d{4})-(\d{2})/); return x ? x[1]+'-'+x[2] : ''; };
+  const num = v => typeof v === 'number' ? v : (Number(String(v||'').replace(/[^\d.\-]/g,'')) || 0);
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const y = hoy.getFullYear(), m = hoy.getMonth(), dim = new Date(y, m+1, 0).getDate();
+  const per = y + '-' + String(m+1).padStart(2,'0');
+  const en7 = new Date(hoy); en7.setDate(en7.getDate()+7);
 
+  const est = {};
+  cupEstados.forEach(r => { if (normPer(r[2]) === per) est[String(r[1])] = { aviso: esSi(r[3]), pagado: esSi(r[5]), fPago: fecha(r[6]) }; });
+
+  const a = { mes: MESES[m], total:0, avisados:0, pagados:0, vencidos:0, sinAvisar:0, proximos:0, avisadoSinPago:0,
+              porComp:{}, venceAcum:new Array(dim).fill(0), pagoAcum:new Array(dim).fill(0), hoyDia: hoy.getDate(), dim };
+  cupones.forEach(r => {
+    if (String(r[7]).trim() !== '' && !esSi(r[7])) return;                 // pausada
+    const alta = fecha(r[9]);
+    if (alta && (alta.getFullYear() > y || (alta.getFullYear() === y && alta.getMonth() > m))) return;
+    const dia = Math.min(Math.max(1, parseInt(r[6],10) || 1), dim);
+    const vence = new Date(y, m, dia);
+    const s = est[String(r[0])] || { aviso:false, pagado:false, fPago:null };
+    if (!s.pagado && !s.aviso && alta && vence < alta) return;            // venció antes de cargarla: sin seguimiento
+    const comp = String(r[3] || 'Sin compañía');
+    const pc = a.porComp[comp] = a.porComp[comp] || { pagado:0, avisado:0, pendiente:0, vencido:0 };
+    a.total++;
+    if (s.aviso) a.avisados++;
+    a.venceAcum[dia-1]++;
+    if (s.pagado) {
+      a.pagados++; pc.pagado++;
+      const dp = s.fPago && s.fPago.getMonth() === m && s.fPago.getFullYear() === y ? s.fPago.getDate() : dia;
+      a.pagoAcum[Math.min(dp, a.hoyDia)-1]++;
+    } else if (vence < hoy) { a.vencidos++; pc.vencido++; }
+    else {
+      if (s.aviso) { a.avisadoSinPago++; pc.avisado++; } else { a.sinAvisar++; pc.pendiente++; }
+      if (vence <= en7) a.proximos++;
+    }
+  });
+  for (let i = 1; i < dim; i++) { a.venceAcum[i] += a.venceAcum[i-1]; a.pagoAcum[i] += a.pagoAcum[i-1]; }
+  a.pagoAcum = a.pagoAcum.map((v, i) => i < a.hoyDia ? v : null);          // los pagos solo se dibujan hasta hoy
+
+  // Último reporte mensual cargado
+  const porPer = {};
+  repCobranza.forEach(r => { const p = normPer(r[1]); if (!p) return; const o = porPer[p] = porPer[p] || { e:0, c:0 }; o.e += num(r[3]); o.c += num(r[4]); });
+  const ult = Object.keys(porPer).sort().pop();
+  a.tasa = ult && porPer[ult].e ? porPer[ult].c / porPer[ult].e * 100 : null;
+  a.tasaMes = ult ? MESES[+ult.slice(5)-1] : '';
+  return a;
+}
+
+function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
   // ── SINIESTROS ──
   // Cols: id | asegurado | poliza | ramo | cobertura | compania | fechaSin | fechaDen | estado | checks | notas
   const sin_total    = siniestros.length;
@@ -183,23 +228,26 @@ function renderDashboard(cobranzas, siniestros, renovaciones, tareas, ventas) {
   // ── RENDER HTML ──
   let html = '';
 
-  // COBRANZAS
+  // COBRANZA (tiempo real, mes en curso)
+  const pc = (n, d) => d ? Math.round(n / d * 100) + '%' : '—';
   html += `
   <div class="section">
     <div class="section-header">
       <div class="section-dot" style="background:var(--info)"></div>
-      <span class="section-title">Cobranzas</span>
+      <span class="section-title">Cobranza — ${cob.mes} en tiempo real</span>
     </div>
     <div class="metrics-row">
-      <div class="metric"><div class="metric-val c-gold">${cob_total}</div><div class="metric-lbl">Total clientes</div></div>
-      <div class="metric"><div class="metric-val c-ok">${cob_enviados}</div><div class="metric-lbl">WPP enviados</div></div>
-      <div class="metric"><div class="metric-val c-warn">${cob_pendientes}</div><div class="metric-lbl">Sin enviar</div></div>
-      <div class="metric"><div class="metric-val c-danger">${cob_urgentes}</div><div class="metric-lbl">Urgentes</div></div>
-      <div class="metric"><div class="metric-val c-warn">${cob_proximos}</div><div class="metric-lbl">Próximos</div></div>
+      <div class="metric"><div class="metric-val c-gold">${cob.total}</div><div class="metric-lbl">Cupones del mes</div></div>
+      <div class="metric"><div class="metric-val c-info">${pc(cob.avisados, cob.total)}</div><div class="metric-lbl">Avisados (${cob.avisados})</div></div>
+      <div class="metric"><div class="metric-val c-ok">${pc(cob.pagados, cob.total)}</div><div class="metric-lbl">Pagados (${cob.pagados})</div></div>
+      <div class="metric"><div class="metric-val c-danger">${cob.vencidos}</div><div class="metric-lbl">Vencidos impagos</div></div>
+      <div class="metric"><div class="metric-val c-warn">${cob.proximos}</div><div class="metric-lbl">Vencen en 7 días</div></div>
+      <div class="metric"><div class="metric-val c-gold">${cob.tasa == null ? '—' : cob.tasa.toLocaleString('es-AR', {maximumFractionDigits:1}) + '%'}</div><div class="metric-lbl">Tasa de cobranza${cob.tasaMes ? ' (' + cob.tasaMes + ')' : ''}</div></div>
     </div>
     <div class="charts-row">
-      <div class="chart-card"><div class="chart-title">Estado de envíos</div><div class="chart-wrap"><canvas id="chart-cob-pie"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Urgencia de vencimientos</div><div class="chart-wrap"><canvas id="chart-cob-bar"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Estado de los cupones del mes</div><div class="chart-wrap"><canvas id="chart-cob-pie"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Avance por compañía</div><div class="chart-wrap"><canvas id="chart-cob-bar"></canvas></div></div>
+      <div class="chart-card" style="grid-column:1/-1"><div class="chart-title">Ritmo del mes — cupones vencidos vs pagados (acumulado)</div><div class="chart-wrap" style="height:210px"><canvas id="chart-cob-line"></canvas></div></div>
     </div>
   </div>`;
 
@@ -314,12 +362,37 @@ function renderDashboard(cobranzas, siniestros, renovaciones, tareas, ventas) {
     charts.push(c);
   }
 
-  // Cobranzas
-  mkPie('chart-cob-pie', ['Enviados','Sin enviar'], [cob_enviados, cob_pendientes]);
-  mkBar('chart-cob-bar', ['Urgentes','Próximos','Al día'], [{
-    data: [cob_urgentes, cob_proximos, cob_total - cob_urgentes - cob_proximos],
-    backgroundColor: ['#e05555','#e8a83a','#4caf82'], borderRadius: 4
-  }]);
+  // Cobranza
+  const ejes = {
+    x: { ticks: { color: '#8a9bb0', font: { size: 10 } }, grid: { color: 'rgba(200,168,75,0.08)' } },
+    y: { ticks: { color: '#8a9bb0', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(200,168,75,0.08)' }, beginAtZero: true }
+  };
+  const leyenda = { labels: { color: '#8a9bb0', font: { size: 11 }, boxWidth: 10 } };
+  charts.push(new Chart(document.getElementById('chart-cob-pie'), {
+    type: 'doughnut',
+    data: { labels: ['Pagados','Avisados sin pago','Falta avisar','Vencidos impagos'],
+            datasets: [{ data: [cob.pagados, cob.avisadoSinPago, cob.sinAvisar, cob.vencidos], backgroundColor: ['#4caf82','#5b9bd5','#c8a84b','#e05555'], borderWidth: 0 }] },
+    options: { ...chartDefaults, cutout: '60%' }
+  }));
+  const comps = Object.keys(cob.porComp).sort((a, b) => {
+    const t = c => { const o = cob.porComp[c]; return o.pagado + o.avisado + o.pendiente + o.vencido; };
+    return t(b) - t(a);
+  });
+  const serie = (label, campo, color) => ({ label, data: comps.map(c => cob.porComp[c][campo]), backgroundColor: color, borderRadius: 2 });
+  charts.push(new Chart(document.getElementById('chart-cob-bar'), {
+    type: 'bar',
+    data: { labels: comps.map(c => c.replace('Federación Patronal', 'FedPat')),
+            datasets: [serie('Pagados','pagado','#4caf82'), serie('Avisados','avisado','#5b9bd5'), serie('Falta avisar','pendiente','#c8a84b'), serie('Vencidos','vencido','#e05555')] },
+    options: { ...chartDefaults, indexAxis: 'y', plugins: { legend: leyenda },
+               scales: { x: { ...ejes.y, stacked: true }, y: { ...ejes.x, stacked: true, grid: { display: false } } } }
+  }));
+  charts.push(new Chart(document.getElementById('chart-cob-line'), {
+    type: 'line',
+    data: { labels: cob.venceAcum.map((_, i) => i + 1), datasets: [
+      { label: 'Cupones vencidos a la fecha', data: cob.venceAcum, borderColor: '#c8a84b', backgroundColor: 'rgba(200,168,75,.08)', fill: true, stepped: true, pointRadius: 0, borderWidth: 2 },
+      { label: 'Cupones pagados', data: cob.pagoAcum, borderColor: '#4caf82', backgroundColor: 'rgba(76,175,130,.15)', fill: true, stepped: true, pointRadius: 0, borderWidth: 2 }] },
+    options: { ...chartDefaults, interaction: { mode: 'index', intersect: false }, plugins: { legend: leyenda }, scales: ejes }
+  }));
 
   // Siniestros
   mkPie('chart-sin-pie', ['Abiertos','En proceso','Pend. info','Cerrados'], [sin_abiertos, sin_proceso, sin_pend, sin_cerrados]);
