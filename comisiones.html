@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comisiones — Seguros Dragone</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
     --navy:   #0d1b2a;
@@ -23,20 +22,20 @@
   body::before {
     content: ''; position: fixed; inset: 0;
     background:
-      radial-gradient(ellipse at 15% 0%, rgba(200,168,75,0.07) 0%, transparent 50%),
-      radial-gradient(ellipse at 85% 100%, rgba(26,74,122,0.18) 0%, transparent 50%);
+      radial-gradient(ellipse at 15% 0%, var(--accent-soft) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 100%, var(--accent-soft) 0%, transparent 50%);
     pointer-events: none; z-index: 0;
   }
   header {
     position: relative; z-index: 10; padding: 1.2rem 2.5rem;
-    border-bottom: 1px solid var(--border); background: rgba(13,27,42,0.97);
+    border-bottom: 1px solid var(--border); background: var(--surface);
     display: flex; align-items: center; justify-content: space-between;
   }
   .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
   .brand-shield {
     width: 36px; height: 36px;
     clip-path: polygon(50% 0%, 100% 15%, 100% 70%, 50% 100%, 0% 70%, 0% 15%);
-    background: rgba(200,168,75,0.1); border: 1.5px solid var(--gold);
+    background: var(--accent-soft); border: 1.5px solid var(--gold);
     display: flex; align-items: center; justify-content: center;
     font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--gold);
   }
@@ -93,7 +92,7 @@
     cursor: pointer; transition: all .15s;
   }
   .filtro-btn:hover { border-color: var(--gold); color: var(--gold); }
-  .filtro-btn.active { background: rgba(200,168,75,0.12); border-color: var(--gold); color: var(--gold); }
+  .filtro-btn.active { background: var(--accent-soft); border-color: var(--gold); color: var(--gold); }
   .filtro-btn.anio-btn { font-family: var(--mono); font-size: 12px; font-weight: 600; }
 
   .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); margin-top: 1rem; }
@@ -119,7 +118,7 @@
     background: var(--navy2); border: 1px solid var(--border); border-radius: 8px;
     padding: 1.4rem; position: relative; overflow: hidden; transition: border-color .2s;
   }
-  .productor-card:hover { border-color: rgba(200,168,75,0.4); }
+  .productor-card:hover { border-color: var(--accent); }
   .productor-card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
     background: var(--accent, var(--gold));
@@ -127,7 +126,7 @@
   .prod-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
   .prod-avatar {
     width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-    background: rgba(200,168,75,0.1); border: 1px solid var(--border);
+    background: var(--accent-soft); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
     font-family: var(--serif); font-size: 13px; font-weight: 700;
   }
@@ -146,7 +145,7 @@
     background: var(--navy2); border: 1px solid var(--border); border-radius: 8px;
     padding: 1.2rem; transition: border-color .2s;
   }
-  .compania-card:hover { border-color: rgba(200,168,75,0.4); }
+  .compania-card:hover { border-color: var(--accent); }
   .comp-name { font-family: var(--serif); font-size: .9rem; font-weight: 600; color: var(--white); margin-bottom: .8rem; }
   .comp-rows { display: flex; flex-direction: column; gap: .4rem; }
   .comp-row { display: flex; justify-content: space-between; font-size: 11px; }
@@ -166,7 +165,7 @@
     cursor: pointer; user-select: none;
   }
   thead th:hover { color: var(--gold); }
-  tbody tr { background: var(--navy2); border-bottom: 1px solid rgba(200,168,75,0.06); transition: background .12s; }
+  tbody tr { background: var(--navy2); border-bottom: 1px solid var(--accent-soft); transition: background .12s; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: var(--navy3); }
   td { padding: .6rem .9rem; vertical-align: middle; }
@@ -174,7 +173,7 @@
   .td-asegurado { color: var(--white); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .td-ramo {
     font-size: 10px; padding: 2px 7px; border-radius: 3px;
-    background: rgba(200,168,75,0.07); border: 1px solid var(--border);
+    background: var(--accent-soft); border: 1px solid var(--border);
     color: var(--muted); white-space: nowrap; display: inline-block;
   }
   .td-mono { font-family: var(--mono); font-size: 11px; color: var(--muted); }
@@ -207,6 +206,8 @@
     .search-wrap input { width:100%; }
   }
 </style>
+<link rel="stylesheet" href="tema.css">
+<script src="tema.js"></script>
 </head>
 <body>
 
@@ -291,11 +292,11 @@
 
   // Colores por nombre normalizado
   const NOMBRE_A_COLOR = {
-    'roberto':             '#c8a84b',
-    'emiliano bartolomeo': '#7eb8f7',
+    'roberto':             temaColor('--accent'),
+    'emiliano bartolomeo': temaColor('--info'),
     'evelin chain':        '#f78fb3',
     'leonardo bonilla':    '#a8e6cf',
-    'santiago':            '#e8a83a',
+    'santiago':            temaColor('--warn'),
     'bruno masnatta':      '#b39ddb',
     'marcelo haikel':      '#80cbc4',
   };
@@ -369,7 +370,7 @@
   }
 
   function colorCobrador(nombre) {
-    return NOMBRE_A_COLOR[nombre.toLowerCase()] || '#8a9bb0';
+    return NOMBRE_A_COLOR[nombre.toLowerCase()] || temaColor('--text-2');
   }
 
   function inicialesCobrador(nombre) {

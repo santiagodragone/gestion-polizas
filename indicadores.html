@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Indicadores — Dragone Seguros</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
@@ -15,11 +14,11 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--navy);color:var(--white);font-family:var(--sans);min-height:100vh;}
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 0%,rgba(200,168,75,0.07) 0%,transparent 50%),radial-gradient(ellipse at 90% 100%,rgba(26,74,122,0.18) 0%,transparent 50%);pointer-events:none;z-index:0;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 0%,var(--accent-soft) 0%,transparent 50%),radial-gradient(ellipse at 90% 100%,var(--accent-soft) 0%,transparent 50%);pointer-events:none;z-index:0;}
 
-  header{position:relative;z-index:10;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);background:rgba(13,27,42,0.97);display:flex;align-items:center;justify-content:space-between;}
+  header{position:relative;z-index:10;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;}
   .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;}
-  .brand-shield{width:36px;height:36px;clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:rgba(200,168,75,0.1);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold);}
+  .brand-shield{width:36px;height:36px;clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:var(--accent-soft);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold);}
   .brand-text h1{font-family:var(--serif);font-size:.95rem;font-weight:600;color:var(--white);}
   .brand-text span{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;}
   .header-right{display:flex;align-items:center;gap:.8rem;}
@@ -75,6 +74,8 @@
     .metrics-row{grid-template-columns:repeat(2,1fr);}
   }
 </style>
+<link rel="stylesheet" href="tema.css">
+<script src="tema.js"></script>
 </head>
 <body>
 
@@ -101,7 +102,7 @@
 
 <footer>
   <span class="footer-brand">Seguros Dragone — Indicadores</span>
-  <span class="footer-ver">v1.1 · 2026</span>
+  <span class="footer-ver">v1.2 · 2026</span>
 </footer>
 
 <script>
@@ -332,10 +333,10 @@ function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
   // ── CHARTS ──
   const chartDefaults = {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { labels: { color: '#8a9bb0', font: { size: 11 } } } }
+    plugins: { legend: { labels: { color: temaColor('--text-2'), font: { size: 11 } } } }
   };
 
-  const pieColors = ['#c8a84b','#4caf82','#e8a83a','#e05555','#5b9bd5'];
+  const pieColors = [temaColor('--accent'),temaColor('--ok'),temaColor('--warn'),temaColor('--danger'),temaColor('--info')];
 
   function mkPie(id, labels, data) {
     const c = new Chart(document.getElementById(id), {
@@ -353,10 +354,10 @@ function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
       options: {
         ...chartDefaults,
         scales: {
-          x: { ticks: { color: '#8a9bb0', font: { size: 10 } }, grid: { color: 'rgba(200,168,75,0.08)' } },
-          y: { ticks: { color: '#8a9bb0', font: { size: 10 } }, grid: { color: 'rgba(200,168,75,0.08)' }, beginAtZero: true }
+          x: { ticks: { color: temaColor('--text-2'), font: { size: 10 } }, grid: { color: temaColor('--accent-soft') } },
+          y: { ticks: { color: temaColor('--text-2'), font: { size: 10 } }, grid: { color: temaColor('--accent-soft') }, beginAtZero: true }
         },
-        plugins: { legend: { display: datasets.length > 1, labels: { color: '#8a9bb0', font: { size: 11 } } } }
+        plugins: { legend: { display: datasets.length > 1, labels: { color: temaColor('--text-2'), font: { size: 11 } } } }
       }
     });
     charts.push(c);
@@ -364,14 +365,14 @@ function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
 
   // Cobranza
   const ejes = {
-    x: { ticks: { color: '#8a9bb0', font: { size: 10 } }, grid: { color: 'rgba(200,168,75,0.08)' } },
-    y: { ticks: { color: '#8a9bb0', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(200,168,75,0.08)' }, beginAtZero: true }
+    x: { ticks: { color: temaColor('--text-2'), font: { size: 10 } }, grid: { color: temaColor('--accent-soft') } },
+    y: { ticks: { color: temaColor('--text-2'), font: { size: 10 }, precision: 0 }, grid: { color: temaColor('--accent-soft') }, beginAtZero: true }
   };
-  const leyenda = { labels: { color: '#8a9bb0', font: { size: 11 }, boxWidth: 10 } };
+  const leyenda = { labels: { color: temaColor('--text-2'), font: { size: 11 }, boxWidth: 10 } };
   charts.push(new Chart(document.getElementById('chart-cob-pie'), {
     type: 'doughnut',
     data: { labels: ['Pagados','Avisados sin pago','Falta avisar','Vencidos impagos'],
-            datasets: [{ data: [cob.pagados, cob.avisadoSinPago, cob.sinAvisar, cob.vencidos], backgroundColor: ['#4caf82','#5b9bd5','#c8a84b','#e05555'], borderWidth: 0 }] },
+            datasets: [{ data: [cob.pagados, cob.avisadoSinPago, cob.sinAvisar, cob.vencidos], backgroundColor: [temaColor('--ok'),temaColor('--info'),temaColor('--warn'),temaColor('--danger')], borderWidth: 0 }] },
     options: { ...chartDefaults, cutout: '60%' }
   }));
   const comps = Object.keys(cob.porComp).sort((a, b) => {
@@ -382,15 +383,15 @@ function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
   charts.push(new Chart(document.getElementById('chart-cob-bar'), {
     type: 'bar',
     data: { labels: comps.map(c => c.replace('Federación Patronal', 'FedPat')),
-            datasets: [serie('Pagados','pagado','#4caf82'), serie('Avisados','avisado','#5b9bd5'), serie('Falta avisar','pendiente','#c8a84b'), serie('Vencidos','vencido','#e05555')] },
+            datasets: [serie('Pagados','pagado',temaColor('--ok')), serie('Avisados','avisado',temaColor('--info')), serie('Falta avisar','pendiente',temaColor('--warn')), serie('Vencidos','vencido',temaColor('--danger'))] },
     options: { ...chartDefaults, indexAxis: 'y', plugins: { legend: leyenda },
                scales: { x: { ...ejes.y, stacked: true }, y: { ...ejes.x, stacked: true, grid: { display: false } } } }
   }));
   charts.push(new Chart(document.getElementById('chart-cob-line'), {
     type: 'line',
     data: { labels: cob.venceAcum.map((_, i) => i + 1), datasets: [
-      { label: 'Cupones vencidos a la fecha', data: cob.venceAcum, borderColor: '#c8a84b', backgroundColor: 'rgba(200,168,75,.08)', fill: true, stepped: true, pointRadius: 0, borderWidth: 2 },
-      { label: 'Cupones pagados', data: cob.pagoAcum, borderColor: '#4caf82', backgroundColor: 'rgba(76,175,130,.15)', fill: true, stepped: true, pointRadius: 0, borderWidth: 2 }] },
+      { label: 'Cupones vencidos a la fecha', data: cob.venceAcum, borderColor: temaColor('--accent'), backgroundColor: temaColor('--accent-soft'), fill: true, stepped: true, pointRadius: 0, borderWidth: 2, order: 2 },
+      { label: 'Cupones pagados', data: cob.pagoAcum, borderColor: temaColor('--ok'), backgroundColor: temaColor('--ok-soft'), fill: true, stepped: true, pointRadius: 0, borderWidth: 2, order: 1 }] },
     options: { ...chartDefaults, interaction: { mode: 'index', intersect: false }, plugins: { legend: leyenda }, scales: ejes }
   }));
 
@@ -398,21 +399,21 @@ function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
   mkPie('chart-sin-pie', ['Abiertos','En proceso','Pend. info','Cerrados'], [sin_abiertos, sin_proceso, sin_pend, sin_cerrados]);
   mkBar('chart-sin-bar', ['Abiertos','En proceso','Cerrados'], [{
     data: [sin_abiertos, sin_proceso, sin_cerrados],
-    backgroundColor: ['#e8a83a','#5b9bd5','#4caf82'], borderRadius: 4
+    backgroundColor: [temaColor('--warn'),temaColor('--info'),temaColor('--ok')], borderRadius: 4
   }]);
 
   // Renovaciones
   mkPie('chart-ren-pie', ['Enviadas','Pendientes','Sin enviar'], [ren_enviadas, ren_pend, ren_no]);
   mkBar('chart-ren-bar', ['Enviadas','Pendientes','Sin enviar'], [{
     data: [ren_enviadas, ren_pend, ren_no],
-    backgroundColor: ['#4caf82','#e8a83a','#e05555'], borderRadius: 4
+    backgroundColor: [temaColor('--ok'),temaColor('--warn'),temaColor('--danger')], borderRadius: 4
   }]);
 
   // Tareas
   mkPie('chart-tar-pie', ['Pendientes','En progreso','Hechas'], [tar_pend, tar_proceso, tar_hecho]);
   mkBar('chart-tar-bar', ['Pendientes','En progreso','Hechas'], [{
     data: [tar_pend, tar_proceso, tar_hecho],
-    backgroundColor: ['#e05555','#5b9bd5','#4caf82'], borderRadius: 4
+    backgroundColor: [temaColor('--danger'),temaColor('--info'),temaColor('--ok')], borderRadius: 4
   }]);
 
   // Ventas
@@ -420,7 +421,7 @@ function renderDashboard(cob, siniestros, renovaciones, tareas, ventas) {
     mkBar('chart-ven-bar', mesLabels, [{
       label: 'Ventas',
       data: mesVals,
-      backgroundColor: '#c8a84b', borderRadius: 4
+      backgroundColor: temaColor('--accent'), borderRadius: 4
     }]);
   }
 }

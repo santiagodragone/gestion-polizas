@@ -1,0 +1,187 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEMA — Seguros Dragone
+   Look único para todo el sistema. Se carga DESPUÉS del <style> de cada módulo
+   y lo pisa: cambiar un color acá lo cambia en todas las pantallas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Superficies y texto */
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --line: #e4e7ec;
+  --text: #111827;
+  --text-2: #5f6b7a;
+
+  /* Acento: azul marino Dragone */
+  --accent: #1b2f4b;
+  --accent-2: #2b4770;
+  --on-accent: #ffffff;
+  --accent-soft: #e9eef5;
+
+  /* Estados */
+  --ok: #15803d;      --ok-soft: #e6f4ea;
+  --warn: #b45309;    --warn-soft: #fcefd9;
+  --danger: #c2362b;  --danger-soft: #fce9e7;
+  --info: #2563eb;    --info-soft: #e5edfd;
+  --neutral-soft: #eef0f3;
+
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .05);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, .12);
+  --overlay: rgba(16, 24, 40, .45);
+
+  /* Nombres viejos que usan los módulos, apuntados a la paleta nueva */
+  --navy: var(--bg);
+  --navy2: var(--surface);
+  --navy3: var(--surface-2);
+  --navy4: var(--line);
+  --blue: var(--accent);
+  --gold: var(--accent);
+  --gold2: var(--accent-2);
+  --white: var(--text);
+  --muted: var(--text-2);
+  --border: var(--line);
+  --serif: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e1116;
+  --surface: #161a21;
+  --surface-2: #1e232c;
+  --line: #2a303b;
+  --text: #e9ecf1;
+  --text-2: #98a2b3;
+
+  --accent: #a9c4ee;
+  --accent-2: #c3d6f5;
+  --on-accent: #0e1116;
+  --accent-soft: rgba(169, 196, 238, .12);
+
+  --ok: #4ade80;      --ok-soft: rgba(74, 222, 128, .13);
+  --warn: #fbbf24;    --warn-soft: rgba(251, 191, 36, .13);
+  --danger: #f87171;  --danger-soft: rgba(248, 113, 113, .14);
+  --info: #7cb0ff;    --info-soft: rgba(124, 176, 255, .14);
+  --neutral-soft: rgba(152, 162, 179, .12);
+
+  --shadow: none;
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, .5);
+  --overlay: rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+body { background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+body::before { display: none; }
+button, input, select, textarea { font-family: inherit; }
+::selection { background: var(--accent-soft); }
+
+/* ── Encabezado ───────────────────────────────────────────────────────────── */
+header { background: var(--surface); border-bottom: 1px solid var(--line); padding: .85rem 2rem; }
+.brand-shield, .login-shield {
+  clip-path: none; border: none; border-radius: 9px; width: 34px; height: 34px;
+  background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 700;
+}
+.brand-text h1, .login-brand h1 { font-size: .95rem; font-weight: 600; letter-spacing: -.01em; }
+.brand-text span, .login-brand span { font-size: 11.5px; letter-spacing: 0; text-transform: none; color: var(--text-2); }
+.header-right { display: flex; align-items: center; gap: .6rem; }
+.back-btn, .btn-refresh, .btn-logout, .date-tag, .tema-btn {
+  font-size: 12.5px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--text-2); background: transparent; border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 12px; line-height: 1.3;
+}
+.back-btn:hover, .btn-refresh:hover, .tema-btn:hover { color: var(--text); border-color: var(--text-2); }
+.date-tag { border-color: transparent; padding-left: 0; padding-right: 0; }
+.tema-btn { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px; }
+.tema-btn svg { width: 16px; height: 16px; display: block; }
+.user-pill { border-color: var(--line); font-size: 12.5px; }
+.user-avatar { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+/* ── Títulos de página ────────────────────────────────────────────────────── */
+.page-eyebrow, .hero-eyebrow { display: none; }
+.page-title { font-size: 1.65rem; font-weight: 650; letter-spacing: -.025em; }
+.page-title em, .hero h2 em, .login-title em { font-style: normal; color: inherit; }
+.last-update, .page-subtitle { font-size: 12.5px; color: var(--text-2); }
+.section-title, .sub-title { font-weight: 600; letter-spacing: -.01em; }
+
+/* ── Tarjetas de métricas y gráficos ──────────────────────────────────────── */
+.metrics-row { gap: 12px; background: none; border: none; border-radius: 0; overflow: visible; }
+.metric { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.metric-val { font-size: 1.7rem; font-weight: 650; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+.metric-val small { font-weight: 500; font-size: 12px; }
+.metric-lbl { font-size: 12.5px; }
+.chart-card { border-radius: var(--radius); box-shadow: var(--shadow); }
+.chart-title { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--text); }
+
+/* ── Tablas ───────────────────────────────────────────────────────────────── */
+.table-wrap { border-radius: var(--radius); box-shadow: var(--shadow); }
+th, thead th { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+label, .modal-section-title, .filter-label { letter-spacing: 0; text-transform: none; }
+td { border-bottom-color: var(--line); }
+td.num, td.mono, th.num { font-variant-numeric: tabular-nums; font-size: 13px; }
+tr.total td { background: var(--surface-2); }
+
+/* ── Controles ────────────────────────────────────────────────────────────── */
+.btn { border-radius: 8px; font-size: 13px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent); }
+.btn:hover { border-color: var(--text-2); color: var(--text); }
+.btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.inp { background: var(--surface); border-radius: 8px; }
+.inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.tab { font-size: 13.5px; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.fg label, .login-group label { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.badge { font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; border: none; padding: 3px 9px; }
+.modal-bg { background: var(--overlay); }
+.modal { border-radius: 16px; box-shadow: var(--shadow-lg); }
+.modal h3 { font-weight: 650; letter-spacing: -.02em; }
+#toast { background: var(--text); color: var(--bg); border: none; box-shadow: var(--shadow-lg); }
+#toast.err { background: var(--danger); color: #fff; }
+
+/* ── Contactos ────────────────────────────────────────────────────────────── */
+.contacts-grid { gap: 12px; background: none; border: none; border-radius: 0; overflow: visible; }
+.contacts-grid > * { border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+footer { border-top: 1px solid var(--line); }
+.footer-brand, .footer-ver { font-size: 12px; letter-spacing: 0; }
+
+/* ── Inicio ───────────────────────────────────────────────────────────────── */
+.divider, .section-bar { display: none; }
+.hero { padding: 2.6rem 2rem 1.6rem; }
+.hero h2 { font-size: 1.9rem; font-weight: 650; letter-spacing: -.03em; line-height: 1.15; margin-bottom: .5rem; }
+.hero h2 br { display: none; }
+.hero p { font-size: 14px; font-weight: 400; max-width: 520px; }
+.modules-wrap { padding: 0 2rem 3rem; }
+.modules-grid { gap: 14px; background: none; border: none; border-radius: 0; overflow: visible; }
+.mod, .mod.ready { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 1.4rem; gap: .9rem; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.mod::after { display: none; }
+.mod:hover, .mod.ready:hover { background: var(--surface); border-color: var(--accent); box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.mod-icon { width: 40px; height: 40px; border: none; border-radius: 10px; background: var(--accent-soft); color: var(--accent); }
+.mod-icon svg { width: 20px; height: 20px; }
+.mod-name { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.mod-desc { font-size: 12.5px; font-weight: 400; line-height: 1.5; margin-top: 3px; }
+.mod-badge { display: none; }
+.mod-foot { justify-content: flex-end; }
+.mod:hover .mod-arrow { color: var(--accent); }
+
+/* ── Login ────────────────────────────────────────────────────────────────── */
+.login-card { border-radius: 18px; box-shadow: var(--shadow-lg); }
+.login-title { font-size: 1.45rem; font-weight: 650; letter-spacing: -.025em; }
+.login-group input { background: var(--surface); border-radius: 8px; }
+.login-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.btn-login { background: var(--accent); color: var(--on-accent); border-radius: 8px; }
+.btn-login:hover { background: var(--accent-2); }
+.login-error { background: var(--danger-soft); border-color: transparent; }
+
+@media (max-width: 700px) {
+  header { padding: .75rem 1rem; }
+  .hero { padding: 1.8rem 1rem 1.2rem; }
+  .modules-wrap { padding: 0 1rem 2rem; }
+  .page-title { font-size: 1.4rem; }
+}
