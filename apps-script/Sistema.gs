@@ -74,7 +74,7 @@ function sisAsignarIds_() {
 function sistemaPost_(e) {
   var data;
   try { data = JSON.parse(e.postData.contents); } catch (err) { return null; }
-  var acciones = ['asignar_ids_venc', 'guardar_venc', 'estado_venc', 'guardar_tarea', 'eliminar_tarea'];
+  var acciones = ['asignar_ids_venc', 'guardar_venc', 'importar_venc', 'estado_venc', 'guardar_tarea', 'eliminar_tarea'];
   if (!data || acciones.indexOf(data.action) === -1) return null;
 
   var lock = LockService.getScriptLock();
@@ -91,6 +91,25 @@ function sistemaPost_(e) {
       sisUpsert_(sisHoja_(SIS_HOJAS.venc), p.id, [String(p.id), String(p.cliente), String(p.whatsapp || ''), String(p.compania || ''),
         String(p.poliza || ''), String(p.riesgo || ''), fecha, String(p.vigencia || ''), p.activo === false ? 'No' : 'Sí', String(p.notas || '')]);
       return sisJson_({ ok: true });
+    }
+
+    if (data.action === 'importar_venc') {
+      // Carga masiva: actualiza las pólizas que traen un ID existente y agrega el resto de una sola vez
+      var shV = sisHoja_(SIS_HOJAS.venc), lista = data.polizas || [], tz = ss.getSpreadsheetTimeZone();
+      var nV = shV.getLastRow(), filaDe = {};
+      if (nV >= 2) { var idsV = shV.getRange(2, 1, nV - 1, 1).getValues(); for (var iV = 0; iV < idsV.length; iV++) filaDe[String(idsV[iV][0])] = iV + 2; }
+      var nuevas = [], actualizadas = 0, base = new Date().getTime();
+      lista.forEach(function (q, k) {
+        if (!q.cliente) return;
+        var existe = q.id && filaDe[String(q.id)];
+        var fila = [existe ? String(q.id) : 'REN' + base + '_' + k, String(q.cliente), String(q.whatsapp || ''), String(q.compania || ''),
+          String(q.poliza || ''), String(q.riesgo || ''), q.vencimiento ? Utilities.parseDate(String(q.vencimiento), tz, 'yyyy-MM-dd') : '',
+          String(q.vigencia || ''), q.activo === false ? 'No' : 'Sí', String(q.notas || '')];
+        if (existe) { shV.getRange(existe, 1, 1, fila.length).setValues([fila]); actualizadas++; }
+        else nuevas.push(fila);
+      });
+      if (nuevas.length) shV.getRange(shV.getLastRow() + 1, 1, nuevas.length, nuevas[0].length).setValues(nuevas);
+      return sisJson_({ ok: true, nuevas: nuevas.length, actualizadas: actualizadas });
     }
 
     if (data.action === 'estado_venc') {

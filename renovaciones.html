@@ -12,6 +12,19 @@
   .item-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
   .tag{font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-2);}
   .tag.comp{background:var(--accent-soft);color:var(--accent);}
+  .imp-zona{border:1.5px dashed var(--line);border-radius:12px;padding:1.4rem;text-align:center;color:var(--text-2);font-size:13px;line-height:1.6;cursor:pointer;transition:border-color .15s,background .15s;}
+  .imp-zona:hover,.imp-zona.sobre{border-color:var(--accent);background:var(--accent-soft);}
+  .imp-zona strong{color:var(--text);}
+  .imp-pegar{width:100%;margin-top:.7rem;font-size:12px;min-height:60px;resize:vertical;}
+  .imp-mapa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin:1rem 0;}
+  .imp-mapa .inp{width:100%;font-size:12.5px;padding:.4rem .5rem;}
+  .imp-resumen{display:flex;gap:8px;flex-wrap:wrap;margin:.2rem 0 .8rem;font-size:12.5px;}
+  .imp-resumen span{padding:3px 10px;border-radius:20px;background:var(--surface-2);color:var(--text-2);font-weight:500;}
+  .imp-resumen .ok{background:var(--ok-soft);color:var(--ok);} .imp-resumen .info{background:var(--info-soft);color:var(--info);} .imp-resumen .mal{background:var(--danger-soft);color:var(--danger);}
+  .imp-tabla{max-height:260px;overflow:auto;}
+  .imp-tabla td,.imp-tabla th{padding:.45rem .7rem;font-size:12px;white-space:nowrap;}
+  .imp-tabla tr.salta td{color:var(--danger);}
+  @media(max-width:700px){.imp-mapa{grid-template-columns:repeat(2,minmax(0,1fr));}}
   .chip b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;}
   .chip small{display:block;opacity:.8;font-weight:400;font-size:10.5px;overflow:hidden;text-overflow:ellipsis;}
   .cal-cell{min-height:128px;}
@@ -44,6 +57,7 @@
       <select class="inp" id="f-comp" onchange="renderCalendario()" aria-label="Compañía"></select>
       <select class="inp" id="f-riesgo" onchange="renderCalendario()" aria-label="Riesgo"></select>
       <input class="inp" id="f-busq" placeholder="Buscar cliente o póliza..." oninput="renderCalendario()" style="width:200px">
+      <button class="btn" onclick="abrirImportar()">Importar Excel</button>
       <button class="btn primary" onclick="abrirPoliza()">+ Nueva póliza</button>
     </div>
     <div class="metrics-row" id="cal-metrics"></div>
@@ -77,6 +91,7 @@
     <div class="toolbar">
       <input class="inp" id="p-busq" placeholder="Buscar cliente, compañía o póliza..." oninput="renderPolizas()" style="width:280px">
       <div class="spacer"></div>
+      <button class="btn" onclick="abrirImportar()">Importar Excel</button>
       <button class="btn primary" onclick="abrirPoliza()">+ Nueva póliza</button>
     </div>
     <div class="table-wrap">
@@ -107,6 +122,39 @@
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
       <button class="btn" id="mp-otra" onclick="guardarPoliza(true)">Guardar y cargar otra</button>
       <button class="btn primary" id="mp-guardar" onclick="guardarPoliza(false)">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="modal-bg" id="modal-importar">
+  <div class="modal wide">
+    <h3>Importar pólizas desde Excel</h3>
+    <p class="hint">Subí el listado tal como lo bajás del portal de la compañía (Excel o CSV). El sistema reconoce las columnas, te muestra cómo quedaría y recién ahí lo carga. Las pólizas que ya existen se actualizan, no se duplican.</p>
+
+    <div id="imp-paso1">
+      <div class="imp-zona" id="imp-zona" onclick="$('imp-archivo').click()">
+        <strong>Elegí el archivo</strong> o arrastralo acá<br>Excel (.xlsx, .xls) o CSV
+        <input type="file" id="imp-archivo" accept=".xlsx,.xls,.csv,.txt" hidden onchange="leerArchivo(this.files[0])">
+      </div>
+      <textarea class="inp imp-pegar" id="imp-pegar" placeholder="O copiá las filas en el Excel (con los títulos de las columnas) y pegalas acá" oninput="leerPegado(this.value)"></textarea>
+    </div>
+
+    <div id="imp-paso2" style="display:none">
+      <div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="fg"><label for="imp-comp">Compañía (si el archivo no la trae)</label><input class="inp" id="imp-comp" list="dl-comp" autocomplete="off" oninput="vistaPrevia()"></div>
+        <div class="fg"><label for="imp-riesgo">Riesgo (si el archivo no lo trae)</label><input class="inp" id="imp-riesgo" list="dl-riesgo" autocomplete="off" oninput="vistaPrevia()"></div>
+        <div class="fg"><label for="imp-vig">Vigencia (si el archivo no la trae)</label><select class="inp" id="imp-vig" onchange="vistaPrevia()"></select></div>
+      </div>
+      <div class="imp-mapa" id="imp-mapa"></div>
+      <div class="imp-resumen" id="imp-resumen"></div>
+      <div class="table-wrap imp-tabla"><table><thead id="imp-thead"></thead><tbody id="imp-tbody"></tbody></table></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" id="imp-otro" onclick="reiniciarImportar()" style="margin-right:auto;display:none">Elegir otro archivo</button>
+      <button class="btn" onclick="cerrarImportar()">Cancelar</button>
+      <button class="btn primary" id="imp-cargar" onclick="importar()" disabled>Importar</button>
     </div>
   </div>
 </div>
@@ -348,8 +396,179 @@ async function pausarPoliza(id) {
   catch (e) { p.activo = !p.activo; renderTodo(); toast('No se pudo guardar: ' + e.message, true); }
 }
 
+
+// ── IMPORTAR DESDE EXCEL ───────────────────────────────────────────────────
+// Qué títulos de columna se reconocen para cada dato (sin acentos ni mayúsculas). Sumar los que falten.
+const CAMPOS = [
+  { id: 'cliente', nombre: 'Cliente *', claves: ['asegurado', 'cliente', 'tomador', 'apellido y nombre', 'nombre y apellido', 'razon social', 'nombre', 'apellido'] },
+  { id: 'vence', nombre: 'Vencimiento *', claves: ['vencimiento', 'vence', 'vto', 'fin de vigencia', 'fin vigencia', 'vigencia hasta', 'vig hasta', 'fecha hasta', 'hasta', 'fecha fin', 'fecha de renovacion', 'renovacion'] },
+  { id: 'poliza', nombre: 'Póliza', claves: ['poliza', 'nro poliza', 'numero de poliza', 'nro. poliza', 'n° poliza', 'pol'] },
+  { id: 'riesgo', nombre: 'Riesgo', claves: ['riesgo', 'ramo', 'seccion', 'producto', 'cobertura'] },
+  { id: 'compania', nombre: 'Compañía', claves: ['compania', 'aseguradora', 'cia', 'cia.'] },
+  { id: 'whatsapp', nombre: 'WhatsApp', claves: ['whatsapp', 'celular', 'movil', 'telefono', 'tel'] },
+  { id: 'vigencia', nombre: 'Vigencia', claves: ['vigencia', 'tipo de vigencia', 'refacturacion', 'periodo', 'periodicidad'] },
+  { id: 'notas', nombre: 'Notas', claves: ['observaciones', 'observacion', 'notas', 'nota', 'comentarios'] }
+];
+const MESES_VIG = { mensual: 1, bimestral: 2, trimestral: 3, cuatrimestral: 4, semestral: 6, anual: 12 };
+let imp = { filas: [], cols: [], mapa: {}, listas: null };
+
+function abrirImportar() {
+  reiniciarImportar();
+  $('imp-vig').innerHTML = '<option value="">No se repite</option>' + ['Mensual','Bimestral','Trimestral','Cuatrimestral','Semestral','Anual'].map(v => `<option>${v}</option>`).join('');
+  $('imp-comp').value = $('f-comp').value; $('imp-riesgo').value = ''; $('imp-vig').value = 'Anual';
+  $('modal-importar').classList.add('open');
+}
+function cerrarImportar() { $('modal-importar').classList.remove('open'); }
+function reiniciarImportar() {
+  imp = { filas: [], cols: [], mapa: {}, listas: null };
+  $('imp-paso1').style.display = ''; $('imp-paso2').style.display = 'none'; $('imp-otro').style.display = 'none';
+  $('imp-archivo').value = ''; $('imp-pegar').value = ''; $('imp-cargar').disabled = true; $('imp-cargar').textContent = 'Importar';
+}
+
+function cargarLector() {                 // la librería que lee Excel se baja solo cuando hace falta
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, mal) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = ok; s.onerror = () => mal(new Error('No se pudo bajar el lector de Excel. Revisá la conexión.'));
+    document.head.appendChild(s);
+  });
+}
+
+async function leerArchivo(archivo) {
+  if (!archivo) return;
+  try {
+    await cargarLector();
+    const libro = XLSX.read(await archivo.arrayBuffer(), { type: 'array' });
+    // Se usa la hoja con más filas; las fechas quedan como número de serie y se convierten más abajo
+    const hojas = libro.SheetNames.map(n => XLSX.utils.sheet_to_json(libro.Sheets[n], { header: 1, raw: true, defval: '' }));
+    prepararTabla(hojas.sort((a, b) => b.length - a.length)[0] || []);
+  } catch (e) { toast('No pude leer el archivo: ' + e.message, true); }
+}
+function leerPegado(texto) {
+  if (texto.trim().split('\n').length < 2) return;
+  prepararTabla(texto.replace(/\r/g, '').split('\n').map(l => l.split('\t')));
+}
+
+// ¿El título de la columna contiene esa palabra entera? ("cia" no tiene que coincidir con "vigencia")
+function contiene(titulo, palabra) { return (' ' + norm(titulo).replace(/[^a-z0-9°]+/g, ' ') + ' ').includes(' ' + palabra.replace(/[^a-z0-9°]+/g, ' ').trim() + ' '); }
+
+function prepararTabla(tabla) {
+  tabla = tabla.filter(f => f.some(c => String(c).trim() !== ''));
+  if (tabla.length < 2) { toast('El archivo no tiene filas para importar', true); return; }
+  // La fila de títulos es la primera (entre las 15 de arriba) que tiene más títulos reconocidos
+  const puntos = f => f.filter(c => CAMPOS.some(k => k.claves.some(p => contiene(c, p)))).length;
+  let iEnc = 0, mejor = -1;
+  tabla.slice(0, 15).forEach((f, i) => { const p = puntos(f); if (p > mejor) { mejor = p; iEnc = i; } });
+  imp.cols = tabla[iEnc].map((c, i) => String(c).trim() || 'Columna ' + (i + 1));
+  imp.filas = tabla.slice(iEnc + 1);
+  // Para cada dato, la columna cuyo título coincide mejor (primero igual, después que lo contenga)
+  imp.mapa = {};
+  const usadas = new Set();
+  CAMPOS.forEach(k => {
+    let col = -1;
+    for (const p of k.claves) { col = imp.cols.findIndex((c, i) => !usadas.has(i) && norm(c) === p); if (col >= 0) break; }
+    if (col < 0) for (const p of k.claves) { col = imp.cols.findIndex((c, i) => !usadas.has(i) && contiene(c, p) && !(k.id === 'vigencia' && /hasta|desde|fin|inicio/.test(norm(c)))); if (col >= 0) break; }
+    if (col >= 0) usadas.add(col);
+    imp.mapa[k.id] = col;
+  });
+  $('imp-mapa').innerHTML = CAMPOS.map(k => `<div class="fg"><label for="map-${k.id}">${k.nombre}</label>
+    <select class="inp" id="map-${k.id}" onchange="imp.mapa['${k.id}']=+this.value;vistaPrevia()">
+      <option value="-1">— No está en el archivo —</option>${imp.cols.map((c, i) => `<option value="${i}"${imp.mapa[k.id] === i ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+    </select></div>`).join('');
+  $('imp-paso1').style.display = 'none'; $('imp-paso2').style.display = ''; $('imp-otro').style.display = '';
+  vistaPrevia();
+}
+
+function fechaDeCelda(v) {
+  if (v instanceof Date) return new Date(v.getFullYear(), v.getMonth(), v.getDate());
+  if (typeof v === 'number' && v > 20000 && v < 90000) {           // número de serie de Excel
+    const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(v) * 86400000);
+    return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  }
+  return DS.parseFecha(String(v).trim().split(' ')[0]);
+}
+function vigenciaDeTexto(v) {
+  const t = norm(v);
+  const clave = Object.keys(MESES_VIG).find(k => t.includes(k));
+  if (clave) return clave.charAt(0).toUpperCase() + clave.slice(1);
+  const n = parseInt(t, 10);                                         // "6", "12 meses"
+  const porMeses = Object.keys(MESES_VIG).find(k => MESES_VIG[k] === n);
+  return porMeses ? porMeses.charAt(0).toUpperCase() + porMeses.slice(1) : '';
+}
+const clavePoliza = (poliza, compania) => norm(poliza).replace(/[\s.\-\/]/g, '') + '|' + norm(compania);
+
+// Arma las pólizas a partir del archivo y decide cuáles son nuevas, cuáles ya existen y cuáles se saltean
+function armarImportacion() {
+  const m = imp.mapa, val = (f, id) => m[id] >= 0 ? String(f[m[id]] == null ? '' : f[m[id]]).trim() : '';
+  const defComp = $('imp-comp').value.trim(), defRiesgo = $('imp-riesgo').value.trim(), defVig = $('imp-vig').value;
+  const porPoliza = {}, vistas = new Set();
+  ren.polizas.forEach(p => { if (p.poliza) porPoliza[clavePoliza(p.poliza, p.compania)] = p; });
+  const nuevas = [], actualizadas = [], saltadas = [], repetidas = [];
+  imp.filas.forEach(f => {
+    const cliente = val(f, 'cliente'), vence = m.vence >= 0 ? fechaDeCelda(f[m.vence]) : null;
+    if ((!cliente && !val(f, 'poliza')) || (!vence && !val(f, 'poliza'))) return;       // fila vacía, de subtítulo o de totales
+    const p = { cliente, vence, poliza: val(f, 'poliza'), compania: val(f, 'compania') || defComp, riesgo: val(f, 'riesgo') || defRiesgo,
+                whatsapp: val(f, 'whatsapp').replace(/\D/g, ''), vigencia: (m.vigencia >= 0 && vigenciaDeTexto(val(f, 'vigencia'))) || defVig, notas: val(f, 'notas') };
+    if (!cliente || !vence) { saltadas.push({ p, motivo: !cliente ? 'Falta el cliente' : 'Falta la fecha de vencimiento' }); return; }
+    const kArchivo = p.poliza ? clavePoliza(p.poliza, p.compania) : norm(cliente) + '|' + norm(p.compania) + '|' + norm(p.riesgo) + '|' + fechaISO(vence);
+    if (vistas.has(kArchivo)) { repetidas.push(p); return; }
+    vistas.add(kArchivo);
+    // ¿Ya existe? Primero por número de póliza; si no, mismo cliente, compañía y riesgo con un vencimiento que coincide
+    // con el que el sistema ya tenía previsto (pasa cuando la póliza se renovó y cambió de número)
+    let previa = p.poliza ? porPoliza[clavePoliza(p.poliza, p.compania)] : null;
+    if (!previa) previa = ren.polizas.find(x => x.activo && x.vence && norm(x.cliente) === norm(cliente) && norm(x.compania) === norm(p.compania) &&
+      norm(x.riesgo) === norm(p.riesgo) && DS.renovacionesDelMes({ polizas: [x], estados: {} }, vence.getFullYear(), vence.getMonth()).some(o => +o.fecha === +vence));
+    if (previa) {
+      // Se conserva el vencimiento original para no perder lo ya marcado como enviado; se actualizan los demás datos
+      actualizadas.push({ ...previa, cliente, poliza: p.poliza || previa.poliza, riesgo: p.riesgo || previa.riesgo, compania: p.compania || previa.compania,
+        whatsapp: p.whatsapp || previa.whatsapp, notas: p.notas || previa.notas, vigencia: previa.vigencia || p.vigencia });
+    } else nuevas.push({ ...p, id: '', activo: true });
+  });
+  return { nuevas, actualizadas, saltadas, repetidas };
+}
+
+function vistaPrevia() {
+  const l = imp.listas = armarImportacion();
+  const falta = imp.mapa.cliente < 0 ? 'Elegí qué columna tiene el cliente' : imp.mapa.vence < 0 ? 'Elegí qué columna tiene la fecha de vencimiento' : '';
+  $('imp-resumen').innerHTML = falta ? `<span class="mal">${falta}</span>` : `
+    <span class="ok">${l.nuevas.length} nuevas</span>
+    ${l.actualizadas.length ? `<span class="info">${l.actualizadas.length} ya estaban cargadas (se actualizan)</span>` : ''}
+    ${l.repetidas.length ? `<span>${l.repetidas.length} repetidas en el archivo</span>` : ''}
+    ${l.saltadas.length ? `<span class="mal">${l.saltadas.length} no se importan</span>` : ''}`;
+  const f = d => d ? p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() : '—';
+  const fila = (p, estado, cls) => `<tr class="${cls}"><td>${estado}</td><td><strong>${esc(p.cliente) || '—'}</strong></td><td>${f(p.vence)}</td><td>${esc(p.poliza) || '—'}</td><td>${esc(p.riesgo) || '—'}</td><td>${esc(p.compania) || '—'}</td><td>${esc(p.vigencia) || 'No se repite'}</td><td>${esc(p.whatsapp) || '—'}</td></tr>`;
+  $('imp-thead').innerHTML = '<tr><th></th><th>Cliente</th><th>Vencimiento</th><th>Póliza</th><th>Riesgo</th><th>Compañía</th><th>Vigencia</th><th>WhatsApp</th></tr>';
+  $('imp-tbody').innerHTML = l.saltadas.map(s => fila(s.p, esc(s.motivo), 'salta')).join('') +
+    l.nuevas.slice(0, 60).map(p => fila(p, 'Nueva', '')).join('') + l.actualizadas.slice(0, 20).map(p => fila(p, 'Se actualiza', '')).join('');
+  const total = l.nuevas.length + l.actualizadas.length;
+  $('imp-cargar').disabled = !!falta || !total;
+  $('imp-cargar').textContent = total && !falta ? `Importar ${total} ${total === 1 ? 'póliza' : 'pólizas'}` : 'Importar';
+}
+
+async function importar() {
+  const l = imp.listas; if (!l) return;
+  const todas = l.nuevas.concat(l.actualizadas);
+  $('imp-cargar').disabled = true; $('imp-cargar').textContent = 'Importando...';
+  try {
+    const r = await DS.post({ action: 'importar_venc', polizas: todas.map(aFila) });
+    cerrarImportar();
+    toast(`Listo: ${r.nuevas} nuevas y ${r.actualizadas} actualizadas`);
+    await cargarDatos();
+  } catch (e) {
+    toast('No se pudo importar: ' + e.message, true);
+    $('imp-cargar').disabled = false; $('imp-cargar').textContent = 'Reintentar';
+  }
+}
+
+const zona = $('imp-zona');
+['dragover', 'dragenter'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('sobre'); }));
+['dragleave', 'drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('sobre'); }));
+zona.addEventListener('drop', e => leerArchivo(e.dataTransfer.files[0]));
+$('modal-importar').addEventListener('click', e => { if (e.target.id === 'modal-importar') cerrarImportar(); });
+
 $('modal-poliza').addEventListener('click', e => { if (e.target.id === 'modal-poliza') cerrarModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { cerrarModal(); cerrarImportar(); } });
 
 renderTodo();
 cargarDatos();
