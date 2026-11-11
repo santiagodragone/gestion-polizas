@@ -259,7 +259,7 @@
           <div class="seg">
             <button id="seg-dia" class="active" onclick="setPanelModo('dia')">Día</button>
             <button id="seg-avisar" onclick="setPanelModo('avisar')">Falta avisar</button>
-            <button id="seg-impagos" onclick="setPanelModo('impagos')">Impagos del mes</button>
+            <button id="seg-impagos" onclick="setPanelModo('impagos')">Impagos</button>
           </div>
           <div class="day-title" id="day-title"></div>
           <div class="day-sub" id="day-sub"></div>
@@ -370,7 +370,7 @@ let charts = [];
 const hoy = new Date(); hoy.setHours(0,0,0,0);
 let vista = { y: hoy.getFullYear(), m: hoy.getMonth() };
 let diaSel = hoy.getDate();
-let panelModo = 'dia';
+let panelModo = ({ '#impagos': 'impagos', '#avisar': 'avisar' })[location.hash] || 'dia';   // el inicio enlaza directo a estas listas
 // El reporte arranca en el mes cerrado (el que se revisa en la reunión de principio de mes)
 let rep = (() => { const d = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1); return { y: d.getFullYear(), m: d.getMonth() }; })();
 
@@ -575,8 +575,10 @@ function renderCalendario() {
     titulo = 'Falta avisar'; sub = lista.length + ' cupones de ' + MESES[m] + ' por vencer, sin aviso';
     vacio = 'No queda ningún aviso por mandar este mes.';
   } else {
-    lista = ocs.filter(o => o.estado === 'vencido');
-    titulo = 'Impagos del mes'; sub = lista.length + ' cupones vencidos sin pago en ' + MESES[m];
+    // Incluye lo que quedó impago del mes anterior: sigue habiendo que reclamarlo
+    const ant = new Date(y, m - 1, 1);
+    lista = ocurrencias(ant.getFullYear(), ant.getMonth(), true).filter(o => o.estado === 'vencido').concat(ocs.filter(o => o.estado === 'vencido'));
+    titulo = 'Impagos a reclamar'; sub = lista.length + ' cupones vencidos sin pago (' + MESES[ant.getMonth()] + ' y ' + MESES[m] + ')';
     vacio = 'No hay cupones vencidos impagos este mes.';
   }
   $('day-title').textContent = titulo; $('day-sub').textContent = sub;

@@ -3,18 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seguros Dragone — Sistema de Gestión</title>
+<title>Inicio — Seguros Dragone</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="tareas.css">
 <style>
-  :root {
-    --navy:#0d1b2a;--navy2:#162032;--navy3:#1e2d42;--blue:#1a4a7a;
-    --gold:#c8a84b;--gold2:#e8c96b;--white:#f5f2eb;--muted:#8a9bb0;
-    --border:rgba(200,168,75,0.18);--danger:#e05555;
-    --serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--navy);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 0%,rgba(200,168,75,0.08) 0%,transparent 55%),radial-gradient(ellipse at 90% 100%,rgba(26,74,122,0.25) 0%,transparent 55%);pointer-events:none;z-index:0;}
-
   /* ── LOGIN ── */
   #login-screen {
     position:fixed;inset:0;z-index:1000;
@@ -45,60 +37,40 @@
   .btn-login:hover{background:var(--gold2);}
   .btn-login:disabled{opacity:.6;cursor:default;}
   .login-footer{text-align:center;margin-top:1.5rem;font-size:11px;color:var(--muted);}
-
-  /* ── SISTEMA ── */
   #sistema{display:none;}
-  header{position:relative;z-index:10;padding:1.4rem 2.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(13,27,42,0.95);}
-  .brand{display:flex;align-items:center;gap:14px;}
-  .brand-shield{width:42px;height:42px;border:1.5px solid var(--gold);clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:rgba(200,168,75,0.08);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold);}
-  .brand-text h1{font-family:var(--serif);font-size:1.05rem;font-weight:600;letter-spacing:0.04em;color:var(--white);}
-  .brand-text span{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;display:block;margin-top:1px;}
-  .header-right{display:flex;align-items:center;gap:1.2rem;}
-  .date-tag{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;border:1px solid var(--border);padding:4px 10px;border-radius:3px;}
-  .user-pill{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 6px;border:1px solid var(--border);border-radius:20px;font-size:12px;color:var(--muted);}
-  .user-avatar{width:24px;height:24px;border-radius:50%;background:var(--gold);color:var(--navy);font-family:var(--serif);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-  .btn-logout{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);padding:4px 10px;border-radius:3px;background:transparent;cursor:pointer;transition:all .15s;}
-  .btn-logout:hover{color:var(--danger);border-color:var(--danger);}
-  .divider{position:relative;z-index:1;height:1px;margin:0 2.5rem;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0.3;}
-  .hero{position:relative;z-index:1;padding:3.5rem 2.5rem 2rem;}
-  .hero-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--gold);margin-bottom:0.8rem;display:flex;align-items:center;gap:10px;}
-  .hero-eyebrow::before{content:'';display:inline-block;width:30px;height:1px;background:var(--gold);}
-  .hero h2{font-family:var(--serif);font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:700;line-height:1.2;color:var(--white);margin-bottom:0.8rem;}
-  .hero h2 em{font-style:italic;color:var(--gold);}
-  .hero p{font-size:14px;color:var(--muted);font-weight:300;line-height:1.7;max-width:480px;}
-  .modules-wrap{position:relative;z-index:1;padding:0 2.5rem 3rem;}
-  .section-bar{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;}
-  .section-bar-line{flex:1;height:1px;background:var(--border);}
-  .section-bar-label{font-family:var(--mono);font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);}
-  .modules-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-  .mod{background:var(--navy2);padding:1.8rem 1.6rem;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:1rem;transition:background 0.2s;position:relative;overflow:hidden;cursor:pointer;animation:rise 0.5s ease both;}
-  .mod:nth-child(1){animation-delay:.04s}.mod:nth-child(2){animation-delay:.09s}.mod:nth-child(3){animation-delay:.14s}.mod:nth-child(4){animation-delay:.19s}.mod:nth-child(5){animation-delay:.24s}.mod:nth-child(6){animation-delay:.29s}.mod:nth-child(7){animation-delay:.34s}.mod:nth-child(8){animation-delay:.39s}
-  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-  .mod::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform 0.22s ease;}
-  .mod:hover{background:var(--navy3);}
-  .mod:hover::after{transform:scaleX(1);}
-  .mod.ready{background:var(--navy3);}
-  .mod.ready::after{transform:scaleX(1);}
-  .mod.soon{opacity:0.5;cursor:default;}
-  .mod.soon:hover{background:var(--navy2);}
-  .mod.soon::after{display:none;}
-  .mod-icon{width:38px;height:38px;border:1px solid var(--border);border-radius:6px;background:rgba(200,168,75,0.06);display:flex;align-items:center;justify-content:center;font-size:17px;}
-  .mod-name{font-family:var(--serif);font-size:.95rem;font-weight:600;color:var(--white);line-height:1.3;}
-  .mod-desc{font-size:11px;color:var(--muted);font-weight:300;line-height:1.5;}
-  .mod-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;}
-  .mod-badge{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 7px;border-radius:2px;}
-  .badge-live{background:rgba(200,168,75,0.12);color:var(--gold);}
-  .badge-soon{background:rgba(138,155,176,0.1);color:var(--muted);}
-  .mod-arrow{font-size:13px;color:var(--muted);transition:transform 0.18s,color 0.18s;}
-  .mod:hover .mod-arrow{transform:translateX(4px);color:var(--gold);}
-  footer{position:relative;z-index:1;padding:1.2rem 2.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .footer-brand{font-family:var(--serif);font-size:12px;color:var(--muted);}
-  .footer-ver{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;}
-  @media(max-width:900px){header,.hero,.modules-wrap,footer{padding-left:1.2rem;padding-right:1.2rem;}.modules-grid{grid-template-columns:repeat(2,1fr);}}
-  @media(max-width:500px){.modules-grid{grid-template-columns:1fr;}}
+  .page-inicio{max-width:1080px;}
+  .saludo{font-size:1.9rem;font-weight:650;letter-spacing:-.03em;line-height:1.15;}
+  .saludo-sub{font-size:14px;color:var(--text-2);margin:.3rem 0 1.8rem;}
+  .bloque-titulo{font-size:13px;font-weight:600;color:var(--text-2);margin:0 0 10px;display:flex;align-items:center;gap:10px;}
+  .bloque-titulo a{margin-left:auto;font-weight:500;color:var(--accent);text-decoration:none;font-size:12.5px;}
+  .bloque-titulo a:hover{text-decoration:underline;}
+
+  .hoy-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:2.2rem;}
+  .hoy-card{display:flex;flex-direction:column;gap:6px;padding:18px 18px 16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--text);transition:border-color .15s,box-shadow .15s,transform .15s;min-height:148px;}
+  .hoy-card:hover{border-color:var(--accent);box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+  .hoy-top{display:flex;align-items:center;justify-content:space-between;}
+  .hoy-icono{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);}
+  .hoy-icono svg{width:18px;height:18px;}
+  .hoy-flecha{color:var(--text-2);font-size:14px;transition:transform .15s;}
+  .hoy-card:hover .hoy-flecha{transform:translateX(3px);color:var(--accent);}
+  .hoy-num{font-size:2.5rem;font-weight:650;letter-spacing:-.04em;line-height:1;margin-top:auto;font-variant-numeric:tabular-nums;}
+  .hoy-lbl{font-size:13.5px;font-weight:600;}
+  .hoy-det{font-size:12px;color:var(--text-2);min-height:1.2em;}
+  .hoy-card.rojo .hoy-num{color:var(--danger);} .hoy-card.rojo .hoy-icono{background:var(--danger-soft);color:var(--danger);}
+  .hoy-card.ambar .hoy-num{color:var(--warn);} .hoy-card.ambar .hoy-icono{background:var(--warn-soft);color:var(--warn);}
+  .hoy-card.listo .hoy-num{color:var(--ok);} .hoy-card.listo .hoy-icono{background:var(--ok-soft);color:var(--ok);}
+  .hoy-card.espera .hoy-num{color:var(--text-2);}
+
+  .personas.compacto{margin:0 0 12px;gap:6px;}
+  .personas.compacto .persona{padding:4px 12px 4px 4px;}
+  .personas.compacto .avatar{width:26px;height:26px;font-size:10px;}
+  .personas.compacto .persona-txt small{display:none;}
+  @media(max-width:900px){.hoy-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:480px){.hoy-grid{grid-template-columns:1fr;}.hoy-card{min-height:0;}.saludo{font-size:1.5rem;}}
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
+<script src="datos.js"></script>
 </head>
 <body>
 
@@ -130,92 +102,27 @@
 
 <!-- SISTEMA PRINCIPAL -->
 <div id="sistema">
-  <header>
-    <div class="brand">
-      <div class="brand-shield">D</div>
-      <div class="brand-text"><h1>Seguros Dragone</h1><span>Sistema de gestión interno</span></div>
-    </div>
-    <div class="header-right">
-      <span class="date-tag" id="fecha-hoy"></span>
-      <div class="user-pill"><div class="user-avatar">E</div>Equipo Dragone</div>
-      <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
-    </div>
-  </header>
+  <div class="page page-inicio">
+    <div class="saludo" id="saludo"></div>
+    <div class="saludo-sub" id="saludo-sub"></div>
+    <div id="aviso-setup"></div>
 
-  <div class="divider"></div>
+    <div class="bloque-titulo">Para hoy</div>
+    <div class="hoy-grid" id="hoy-grid"></div>
 
-  <div class="hero">
-    <div class="hero-eyebrow">Panel principal</div>
-    <h2>Panel de gestión</h2>
-    <p>Toda la operación de Seguros Dragone en un solo lugar.</p>
+    <div class="bloque-titulo">Tareas de hoy <a href="tareas.html">Ver todas las tareas →</a></div>
+    <div class="personas compacto" id="personas"></div>
+    <form class="alta" id="alta" onsubmit="agregar(event)">
+      <span class="alta-mas" aria-hidden="true">+</span>
+      <input id="a-titulo" class="alta-titulo" placeholder="Agregar una tarea para hoy y apretar Enter" autocomplete="off" aria-label="Nueva tarea para hoy">
+      <button class="btn primary sm" type="submit">Agregar</button>
+    </form>
+    <div id="tareas-hoy"></div>
   </div>
-
-  <div class="modules-wrap">
-    <div class="section-bar">
-      <div class="section-bar-line"></div>
-      <div class="section-bar-label">Módulos del sistema</div>
-      <div class="section-bar-line"></div>
-    </div>
-    <div class="modules-grid">
-
-      <a class="mod ready" href="ventas.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
-        <div><div class="mod-name">Ventas</div><div class="mod-desc">Registro y seguimiento de cotizaciones y pólizas emitidas.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="tareas.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16 9.5"/></svg></div>
-        <div><div class="mod-name">Tablero de tareas</div><div class="mod-desc">Gestión de pendientes y seguimiento diario del equipo.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="gestion_polizas.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19M6.5 15h4"/></svg></div>
-        <div><div class="mod-name">Cobranza</div><div class="mod-desc">Calendario de cupones, avisos por WhatsApp y reportes mensuales.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="indicadores.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></div>
-        <div><div class="mod-name">Indicadores</div><div class="mod-desc">Dashboard con métricas clave de la productora.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="siniestros.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M6.5 17v2M17.5 17v2M7 14h.01M17 14h.01"/></svg></div>
-        <div><div class="mod-name">Siniestros</div><div class="mod-desc">Seguimiento y gestión de denuncias y expedientes.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="contactos.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7.5h1.5M13.5 7.5H15M9 11.5h1.5M13.5 11.5H15M10 21v-4h4v4"/></svg></div>
-        <div><div class="mod-name">Contactos de compañías</div><div class="mod-desc">Directorio de aseguradoras, ejecutivos y canales.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="comisiones.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.5-.9-1.5-1.4-2.8-1.4-1.7 0-2.9.9-2.9 2.1 0 2.9 5.9 1.3 5.9 4.2 0 1.2-1.2 2.1-3 2.1-1.4 0-2.5-.6-3-1.5M12 6v1.8M12 16.2V18"/></svg></div>
-        <div><div class="mod-name">Comisiones</div><div class="mod-desc">Liquidación y seguimiento de comisiones por cobrador y compañía.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-      <a class="mod ready" href="renovaciones.html">
-        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/></svg></div>
-        <div><div class="mod-name">Renovaciones</div><div class="mod-desc">Control y seguimiento de renovaciones enviadas por WhatsApp.</div></div>
-        <div class="mod-foot"><span class="mod-badge badge-live">Activo</span><span class="mod-arrow">→</span></div>
-      </a>
-
-    </div>
-  </div>
-
-  <footer>
-    <span class="footer-brand">Seguros Dragone — Sistema interno</span>
-    <span class="footer-ver">v1.0 · 2025</span>
-  </footer>
 </div>
 
 <script>
+
   const USUARIO  = "EquipoDragone";
   const PASSWORD = "Rober1347";
   const SESSION_KEY = "sd_auth";
@@ -247,20 +154,11 @@
     }
   }
 
+  
   function mostrarSistema() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sistema').style.display = 'block';
-    const d = new Date();
-    const dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    const meses  = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
-    document.getElementById('fecha-hoy').textContent = dias[d.getDay()].toUpperCase()+' '+d.getDate()+' '+meses[d.getMonth()]+' '+d.getFullYear();
-  }
-
-  function cerrarSesion() {
-    if (confirm('¿Cerrar sesión?')) {
-      localStorage.removeItem(SESSION_KEY);
-      location.reload();
-    }
+    iniciar();
   }
 
   // Enter en los campos
@@ -270,10 +168,114 @@
     });
   });
 
-  // Verificar sesión al cargar
-  if (verificarSesion()) {
-    mostrarSistema();
+
+
+  // ── INICIO: lo que hay que hacer hoy ───────────────────────────────────────
+  // Para sumar una tarjeta: agregar un objeto a la lista que devuelve tarjetas().
+  const { hoy, esc } = DS;
+  const $ = id => document.getElementById(id);
+  const ic = d => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+  const ICONOS = {
+    reclamo: ic('<path d="M12 8v5M12 16.5v.5"/><path d="M10.3 3.9L2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'),
+    cupon: ic('<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19M6.5 15h4"/>'),
+    envio: ic('<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/>'),
+    tarea: ic('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16 9.5"/>')
+  };
+
+  let cob = null, ren = null, tareas = null;
+  let persona = DS.recordar('dragone-persona') || '';
+  const equipo = () => [...new Set([...DS.EQUIPO, ...(tareas || []).map(t => t.responsable).filter(Boolean)])];
+  const deHoy = () => (tareas || []).filter(t => (!persona || t.responsable === persona) && !t.hecha && ['hoy', 'atrasadas'].includes(DS.grupoDe(t)));
+  const hechasHoy = () => (tareas || []).filter(t => (!persona || t.responsable === persona) && DS.hechaHoy(t));
+
+  function tarjetas() {
+    const c = cob ? DS.cobranzaHoy(cob) : null;
+    const env = ren ? DS.renovacionesParaEnviar(ren) : null;
+    const vencidas = env ? env.filter(o => o.estado === 'vencida').length : 0;
+    const pend = tareas ? deHoy() : null, atras = pend ? pend.filter(t => DS.grupoDe(t) === 'atrasadas').length : 0;
+    return [
+      { href: 'gestion_polizas.html#impagos', icono: ICONOS.reclamo, n: c && c.impagos, tono: 'rojo',
+        lbl: 'Impagos a reclamar', det: c ? (c.impagos ? 'Cupones vencidos sin pago' : 'Nadie debe cupones vencidos') : '' },
+      { href: 'gestion_polizas.html', icono: ICONOS.cupon, n: c && c.vencenHoy, tono: 'ambar',
+        lbl: 'Cupones que vencen hoy', det: c ? (c.vencenHoy ? (c.sinAvisar ? c.sinAvisar + ' sin aviso enviado' : 'Todos con aviso enviado') : 'Hoy no vence ninguno') : '' },
+      { href: 'renovaciones.html#enviar', icono: ICONOS.envio, n: env && env.length, tono: 'ambar',
+        lbl: 'Pólizas para enviar', det: env ? (env.length ? (vencidas ? vencidas + (vencidas === 1 ? ' ya vencida · ' : ' ya vencidas · ') : '') + 'próximos ' + DS.DIAS_ENVIO + ' días' : 'Renovaciones al día') : '' },
+      { href: 'tareas.html', icono: ICONOS.tarea, n: pend && pend.length, tono: atras ? 'rojo' : '',
+        lbl: persona ? 'Tareas de ' + persona : 'Tareas del equipo', det: pend ? (pend.length ? (atras ? atras + (atras === 1 ? ' atrasada' : ' atrasadas') : 'Para hoy') : 'Nada pendiente para hoy') : '' }
+    ];
   }
+
+  function render() {
+    const h = new Date().getHours();
+    $('saludo').textContent = (h < 13 ? 'Buen día' : h < 20 ? 'Buenas tardes' : 'Buenas noches') + (persona ? ', ' + persona : '');
+    $('saludo-sub').textContent = DS.fechaLarga(hoy) + ' · esto es lo que hay para hoy';
+
+    $('hoy-grid').innerHTML = tarjetas().map(t => {
+      const cargando = t.n == null, tono = cargando ? 'espera' : t.n === 0 ? 'listo' : t.tono;
+      return `<a class="hoy-card ${tono}" href="${t.href}">
+        <div class="hoy-top"><span class="hoy-icono">${t.icono}</span><span class="hoy-flecha">→</span></div>
+        <div class="hoy-num">${cargando ? '—' : t.n}</div>
+        <div><div class="hoy-lbl">${esc(t.lbl)}</div><div class="hoy-det">${esc(t.det)}</div></div>
+      </a>`;
+    }).join('');
+
+    $('personas').innerHTML = [''].concat(equipo()).map(p =>
+      `<button class="persona${p === persona ? ' active' : ''}" aria-pressed="${p === persona}" onclick="elegir('${esc(p)}')">
+        <span class="avatar">${p ? esc(DS.iniciales(p)) : '★'}</span><span class="persona-txt"><strong>${p ? esc(p) : 'Todo el equipo'}</strong></span></button>`).join('');
+
+    if (!tareas) { $('tareas-hoy').innerHTML = ''; return; }
+    const pend = deHoy().sort((a, b) => (b.importante - a.importante) || (a.fecha - b.fecha)), hechas = hechasHoy();
+    $('tareas-hoy').innerHTML = (pend.length ? pend.map(t => fila(t, false)).join('') : '<div class="vacio">Nada pendiente para hoy.</div>') + hechas.map(t => fila(t, true)).join('');
+  }
+
+  function fila(t, hecha) {
+    const atrasada = !hecha && DS.grupoDe(t) === 'atrasadas';
+    return `<div class="tarea${hecha ? ' hecha' : ''}${t.importante ? ' importante' : ''}">
+      <button class="check" role="checkbox" aria-checked="${hecha}" aria-label="${hecha ? 'Marcar como pendiente' : 'Marcar como hecha'}: ${esc(t.titulo)}" onclick="tildar('${esc(t.id)}',${!hecha})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4 8-9"/></svg></button>
+      <a class="tarea-cuerpo" href="tareas.html" style="text-decoration:none"><span class="tarea-titulo">${t.importante ? '<i class="estrella">★</i>' : ''}${esc(t.titulo)}</span>${t.notas ? `<span class="tarea-notas">${esc(t.notas)}</span>` : ''}</a>
+      <div class="tarea-meta">
+        ${atrasada ? `<span class="pill rojo">Atrasada · ${DS.fechaCorta(t.fecha)}</span>` : ''}
+        ${!persona && t.responsable ? `<span class="avatar sm" title="${esc(t.responsable)}">${esc(DS.iniciales(t.responsable))}</span>` : ''}
+      </div></div>`;
+  }
+
+  function elegir(p) { persona = p; DS.recordar('dragone-persona', p); render(); }
+
+  async function guardar(t, copia) {
+    render();
+    try { await DS.post({ action: 'guardar_tarea', tarea: DS.tareaAFila(t) }); }
+    catch (e) { if (copia) Object.assign(t, copia); else tareas = tareas.filter(x => x !== t); render(); DS.toast('No se pudo guardar: ' + e.message, true); }
+  }
+  function tildar(id, hecha) {
+    const t = tareas.find(x => x.id === id); if (!t) return;
+    const copia = { ...t }; DS.completar(t, hecha); guardar(t, copia);
+  }
+  function agregar(ev) {
+    ev.preventDefault();
+    const titulo = $('a-titulo').value.trim();
+    if (!titulo || !tareas) { $('a-titulo').focus(); return; }
+    const t = { id: DS.nuevoId('TAR'), titulo, responsable: persona || DS.EQUIPO[0], fecha: new Date(hoy), repite: 'No',
+                hecha: false, fechaHecha: null, importante: false, notas: '', creada: DS.fechaISO(new Date()) };
+    tareas.push(t); $('a-titulo').value = ''; guardar(t, null);
+  }
+
+  let iniciado = false;
+  async function iniciar() {
+    if (iniciado) return; iniciado = true;
+    render();
+    // Cada bloque se carga por separado: si una hoja todavía no existe, el resto igual aparece
+    const [cup, cupEst, venc, vencEst, pend] = await Promise.all(
+      ['Cupones', 'CuponesEstado', 'Vencimientos', 'RenovacionesEstado', 'Pendientes'].map(DS.hojaOpcional));
+    if (cup) cob = DS.leerCobranza(cup, cupEst);
+    if (venc) ren = DS.leerRenovaciones(venc, vencEst);
+    if (pend) tareas = DS.leerTareas(pend);
+    if (!venc || !pend) $('aviso-setup').innerHTML = '<div class="notice">Falta instalar <em>Sistema.gs</em> en el Apps Script para ver renovaciones y tareas. Las tarjetas sin dato quedan con una raya.</div>';
+    render();
+  }
+
+  // Verificar sesión al cargar
+  if (verificarSesion()) mostrarSistema();
 </script>
 </body>
 </html>

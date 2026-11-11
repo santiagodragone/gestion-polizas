@@ -3,478 +3,355 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Renovaciones — Seguros Dragone</title>
-<style>
-  :root {
-    --navy:#0d1b2a;--navy2:#162032;--navy3:#1e2d42;
-    --gold:#c8a84b;--white:#f5f2eb;--muted:#8a9bb0;--border:rgba(200,168,75,0.18);
-    --danger:#e05555;--ok:#4caf82;--warn:#e8a83a;
-    --serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--navy);color:var(--white);font-family:var(--sans);min-height:100vh;}
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 15% 0%,var(--accent-soft) 0%,transparent 50%),radial-gradient(ellipse at 85% 100%,var(--accent-soft) 0%,transparent 50%);pointer-events:none;z-index:0;}
-  header{position:relative;z-index:10;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;}
-  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;}
-  .brand-shield{width:36px;height:36px;clip-path:polygon(50% 0%,100% 15%,100% 70%,50% 100%,0% 70%,0% 15%);background:var(--accent-soft);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold);}
-  .brand-text h1{font-family:var(--serif);font-size:.95rem;font-weight:600;color:var(--white);}
-  .brand-text span{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;}
-  .back-btn{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);padding:5px 12px;border-radius:3px;text-decoration:none;transition:color .2s,border-color .2s;}
-  .back-btn:hover{color:var(--gold);border-color:var(--gold);}
-  .page{position:relative;z-index:1;padding:2.5rem 2.5rem 3rem;}
-  .page-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap;}
-  .page-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:8px;}
-  .page-eyebrow::before{content:'';width:24px;height:1px;background:var(--gold);display:inline-block;}
-  .page-title{font-family:var(--serif);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;color:var(--white);}
-  .page-title em{font-style:italic;color:var(--gold);}
-  .top-actions{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;}
-  .search-wrap{position:relative;}
-  .search-wrap input{background:var(--navy2);border:1px solid var(--border);color:var(--white);padding:.45rem 1rem .45rem 2.2rem;border-radius:4px;font-family:var(--sans);font-size:12px;outline:none;width:200px;transition:border-color .2s;}
-  .search-wrap input:focus{border-color:var(--gold);}
-  .search-wrap input::placeholder{color:var(--muted);}
-  .search-icon{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none;}
-  .btn-nuevo{padding:.45rem 1.2rem;border-radius:4px;background:var(--gold);color:var(--navy);border:none;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap;}
-  .btn-nuevo:hover{background:var(--accent-2);}
-  .stats-bar{display:flex;gap:0;margin-bottom:2rem;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-  .stat-item{flex:1;padding:1rem 1.4rem;border-right:1px solid var(--border);background:var(--navy2);}
-  .stat-item:last-child{border-right:none;}
-  .stat-val{font-family:var(--serif);font-size:1.8rem;font-weight:600;color:var(--gold);line-height:1;}
-  .stat-val.verde{color:var(--ok);}
-  .stat-val.rojo{color:var(--danger);}
-  .stat-val.naranja{color:var(--warn);}
-  .stat-lbl{font-size:11px;color:var(--muted);margin-top:4px;}
-  .filtros-wrap{display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center;}
-  .filtros-label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;margin-right:.3rem;}
-  .filtro-btn{padding:.35rem .85rem;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .15s;}
-  .filtro-btn:hover{border-color:var(--gold);color:var(--gold);}
-  .filtro-btn.active{background:var(--accent-soft);border-color:var(--gold);color:var(--gold);}
-  .tabla-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  thead tr{background:var(--navy3);}
-  thead th{padding:.75rem 1rem;text-align:left;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
-  tbody tr{background:var(--navy2);transition:background .12s;border-bottom:1px solid var(--accent-soft);}
-  tbody tr:last-child{border-bottom:none;}
-  tbody tr:hover{background:var(--navy3);}
-  td{padding:.7rem 1rem;vertical-align:middle;}
-  .td-mes{font-family:var(--mono);font-size:11px;color:var(--gold);white-space:nowrap;}
-  .td-compania{font-weight:500;color:var(--white);}
-  .td-asegurado{color:var(--white);}
-  .td-poliza{font-family:var(--mono);font-size:11px;color:var(--muted);}
-  .td-renovador{font-size:12px;color:var(--muted);}
-  .td-producto{font-size:11px;padding:2px 8px;border-radius:3px;background:var(--accent-soft);border:1px solid var(--border);color:var(--gold);white-space:nowrap;display:inline-block;}
-  .td-obs{font-size:11px;color:var(--muted);font-style:italic;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid;white-space:nowrap;cursor:pointer;transition:all .15s;font-family:var(--sans);}
-  .badge.si{color:var(--ok);border-color:var(--ok);background:var(--ok-soft);}
-  .badge.no{color:var(--danger);border-color:var(--danger);background:var(--danger-soft);}
-  .badge.pend{color:var(--warn);border-color:var(--warn);background:var(--warn-soft);}
-  .badge:hover{filter:brightness(1.2);}
-  .badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
-  .td-acciones{display:flex;gap:.4rem;align-items:center;}
-  .btn-accion{padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;font-size:10px;cursor:pointer;transition:all .15s;font-family:var(--mono);color:var(--muted);}
-  .btn-accion:hover{color:var(--gold);border-color:var(--gold);}
-  .btn-accion.del:hover{color:var(--danger);border-color:var(--danger);}
-  .btn-wpp{padding:3px 8px;border-radius:3px;border:1px solid var(--ok);background:var(--ok-soft);font-size:10px;cursor:pointer;transition:all .15s;font-family:var(--mono);color:var(--ok);}
-  .btn-wpp:hover{background:var(--ok-soft);}
-  .empty{text-align:center;padding:4rem 2rem;color:var(--muted);font-size:13px;}
-  .empty-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.4;}
-  .loading{text-align:center;padding:4rem;color:var(--muted);font-family:var(--mono);font-size:12px;}
-  @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
-  .dot{animation:pulse 1.2s infinite;display:inline-block;}
-  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:100;align-items:center;justify-content:center;padding:1rem;}
-  .modal-overlay.open{display:flex;}
-  .modal{background:var(--navy2);border:1px solid var(--border);border-radius:10px;padding:2rem;width:100%;max-width:520px;animation:modalIn .2s ease;}
-  @keyframes modalIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
-  .modal-title{font-family:var(--serif);font-size:1.2rem;font-weight:700;color:var(--white);margin-bottom:1.5rem;}
-  .modal-title span{color:var(--gold);font-style:italic;}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:.5rem;}
-  .form-group{display:flex;flex-direction:column;gap:.35rem;}
-  .form-group.full{grid-column:1/-1;}
-  label{font-size:11px;color:var(--muted);letter-spacing:.08em;font-family:var(--mono);}
-  input,textarea,select{background:var(--navy3);border:1px solid var(--border);color:var(--white);padding:.5rem .8rem;border-radius:4px;font-family:var(--sans);font-size:13px;outline:none;transition:border-color .2s;}
-  input:focus,textarea:focus,select:focus{border-color:var(--gold);}
-  input::placeholder,textarea::placeholder{color:var(--muted);}
-  textarea{resize:vertical;min-height:60px;}
-  select option{background:var(--navy2);}
-  .modal-actions{display:flex;gap:.7rem;justify-content:flex-end;margin-top:1.5rem;}
-  .btn-cancel{padding:.5rem 1.2rem;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--sans);font-size:12px;cursor:pointer;transition:all .15s;}
-  .btn-cancel:hover{border-color:var(--muted);color:var(--white);}
-  .btn-save{padding:.5rem 1.4rem;border-radius:4px;border:none;background:var(--gold);color:var(--navy);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:background .15s;}
-  .btn-save:hover{background:var(--accent-2);}
-  .btn-save:disabled{opacity:.5;cursor:default;}
-  .toast{position:fixed;bottom:2rem;right:2rem;z-index:200;background:var(--navy3);border:1px solid var(--gold);color:var(--white);padding:.7rem 1.2rem;border-radius:6px;font-size:12px;font-family:var(--sans);opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;}
-  .toast.show{opacity:1;transform:translateY(0);}
-  footer{position:relative;z-index:1;padding:1.2rem 2.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .footer-brand{font-family:var(--serif);font-size:12px;color:var(--muted);}
-  .footer-ver{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.1em;}
-  @media(max-width:700px){header,.page,footer{padding-left:1.2rem;padding-right:1.2rem;}.form-grid{grid-template-columns:1fr;}.stats-bar{flex-wrap:wrap;}.stat-item{flex:1 1 40%;}.top-actions{width:100%;}.search-wrap input{width:100%;}td,th{font-size:11px;padding:.5rem .6rem;}}
-</style>
+<title>Renovaciones — Dragone Seguros</title>
+<link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
+<script src="datos.js"></script>
+<style>
+  .item-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .tag{font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-2);}
+  .tag.comp{background:var(--accent-soft);color:var(--accent);}
+  .chip b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;}
+  .chip small{display:block;opacity:.8;font-weight:400;font-size:10.5px;overflow:hidden;text-overflow:ellipsis;}
+  .cal-cell{min-height:128px;}
+  @media(max-width:700px){.cal-cell{min-height:58px;}.chip b,.chip small{display:none;}}
+</style>
 </head>
 <body>
 
-<header>
-  <a class="brand" href="index.html">
-    <div class="brand-shield">D</div>
-    <div class="brand-text"><h1>Seguros Dragone</h1><span>Sistema de gestión</span></div>
-  </a>
-  <a class="back-btn" href="index.html">← Volver al inicio</a>
-</header>
-
 <div class="page">
-  <div class="page-top">
-    <div class="page-title-wrap">
-      <div class="page-eyebrow">Módulo</div>
-      <div class="page-title">Control de <em>Renovaciones</em></div>
-    </div>
-    <div class="top-actions">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="search" placeholder="Buscar asegurado, póliza..." oninput="renderTabla()">
+  <div class="page-title">Renovaciones</div>
+  <div class="last-update" id="last-update">Cargando datos...</div>
+
+  <div id="aviso-setup"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="calendario" onclick="verTab('calendario')">Calendario de vencimientos</button>
+    <button class="tab" data-tab="polizas" onclick="verTab('polizas')">Pólizas<span class="count" id="tab-count"></span></button>
+  </div>
+
+  <!-- ══ CALENDARIO ══ -->
+  <div class="panel active" id="panel-calendario">
+    <div class="toolbar">
+      <div class="month-nav">
+        <button class="arrow" onclick="moverMes(-1)" aria-label="Mes anterior">‹</button>
+        <div class="month-label" id="mes-label"></div>
+        <button class="arrow" onclick="moverMes(1)" aria-label="Mes siguiente">›</button>
       </div>
-      <button class="btn-nuevo" onclick="abrirModal()">+ Nueva renovación</button>
+      <button class="btn sm" onclick="irHoy()">Hoy</button>
+      <div class="spacer"></div>
+      <select class="inp" id="f-comp" onchange="renderCalendario()" aria-label="Compañía"></select>
+      <select class="inp" id="f-riesgo" onchange="renderCalendario()" aria-label="Riesgo"></select>
+      <input class="inp" id="f-busq" placeholder="Buscar cliente o póliza..." oninput="renderCalendario()" style="width:200px">
+      <button class="btn primary" onclick="abrirPoliza()">+ Nueva póliza</button>
+    </div>
+    <div class="metrics-row" id="cal-metrics"></div>
+    <div class="cal-layout">
+      <div>
+        <div class="cal" id="cal"></div>
+        <div class="legend">
+          <span><i style="background:var(--warn)"></i>Para enviar</span>
+          <span><i style="background:var(--ok)"></i>Enviada</span>
+          <span><i style="background:var(--danger)"></i>Vencida sin enviar</span>
+          <span><i style="background:var(--text-2)"></i>Todavía falta</span>
+        </div>
+      </div>
+      <div class="day-panel">
+        <div class="day-head">
+          <div class="seg">
+            <button id="seg-dia" class="active" onclick="setPanelModo('dia')">Día</button>
+            <button id="seg-enviar" onclick="setPanelModo('enviar')">Para enviar</button>
+            <button id="seg-vencidas" onclick="setPanelModo('vencidas')">Vencidas</button>
+          </div>
+          <div class="day-title" id="day-title"></div>
+          <div class="day-sub" id="day-sub"></div>
+        </div>
+        <div class="day-list" id="day-list"></div>
+      </div>
     </div>
   </div>
 
-  <div class="stats-bar">
-    <div class="stat-item"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total renovaciones</div></div>
-    <div class="stat-item"><div class="stat-val verde" id="stat-si">—</div><div class="stat-lbl">WPP enviado</div></div>
-    <div class="stat-item"><div class="stat-val naranja" id="stat-pend">—</div><div class="stat-lbl">Pendientes</div></div>
-    <div class="stat-item"><div class="stat-val rojo" id="stat-no">—</div><div class="stat-lbl">Sin enviar</div></div>
-  </div>
-
-  <div class="filtros-wrap" id="filtros-mes"><span class="filtros-label">MES</span></div>
-  <div class="filtros-wrap" id="filtros-estado" style="margin-top:-.5rem">
-    <span class="filtros-label">ESTADO WPP</span>
-    <button class="filtro-btn active" onclick="setFiltroEstado('todos',this)">Todos</button>
-    <button class="filtro-btn" onclick="setFiltroEstado('Sí',this)">✓ Enviado</button>
-    <button class="filtro-btn" onclick="setFiltroEstado('Pendiente',this)">⏳ Pendiente</button>
-    <button class="filtro-btn" onclick="setFiltroEstado('No',this)">✕ Sin enviar</button>
-  </div>
-
-  <div id="contenido">
-    <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando renovaciones...</span></div>
+  <!-- ══ PÓLIZAS ══ -->
+  <div class="panel" id="panel-polizas">
+    <div class="toolbar">
+      <input class="inp" id="p-busq" placeholder="Buscar cliente, compañía o póliza..." oninput="renderPolizas()" style="width:280px">
+      <div class="spacer"></div>
+      <button class="btn primary" onclick="abrirPoliza()">+ Nueva póliza</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cliente</th><th>Compañía</th><th>Riesgo</th><th>Póliza</th><th>Vigencia</th><th>Próximo vencimiento</th><th>WhatsApp</th><th></th></tr></thead>
+        <tbody id="p-body"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<footer>
-  <span class="footer-brand">Seguros Dragone — Renovaciones</span>
-  <span class="footer-ver">v1.0 · 2025</span>
-</footer>
-
-<div class="modal-overlay" id="modal-overlay">
+<!-- MODAL PÓLIZA -->
+<div class="modal-bg" id="modal-poliza">
   <div class="modal">
-    <div class="modal-title" id="modal-title">Nueva <span>renovación</span></div>
+    <h3 id="mp-titulo">Nueva póliza</h3>
+    <p class="hint">Se carga una sola vez, acá o directo en la hoja Vencimientos. El vencimiento se repite solo según la vigencia.</p>
     <div class="form-grid">
-      <div class="form-group">
-        <label>Mes *</label>
-        <select id="f-mes">
-          <option value="">Seleccioná...</option>
-          <option>Enero</option><option>Febrero</option><option>Marzo</option>
-          <option>Abril</option><option>Mayo</option><option>Junio</option>
-          <option>Julio</option><option>Agosto</option><option>Septiembre</option>
-          <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Compañía *</label>
-        <input type="text" id="f-compania" placeholder="Ej: Sancor, Zurich...">
-      </div>
-      <div class="form-group full">
-        <label>Asegurado *</label>
-        <input type="text" id="f-asegurado" placeholder="Nombre del asegurado">
-      </div>
-      <div class="form-group">
-        <label>Póliza</label>
-        <input type="text" id="f-poliza" placeholder="Nº de póliza">
-      </div>
-      <div class="form-group">
-        <label>Renovada por</label>
-        <input type="text" id="f-renovador" placeholder="Nombre del productor">
-      </div>
-      <div class="form-group">
-        <label>Producto</label>
-        <input type="text" id="f-producto" placeholder="Ej: Hogar, Auto, Vida...">
-      </div>
-      <div class="form-group">
-        <label>¿WPP enviado?</label>
-        <select id="f-enviada">
-          <option value="Pendiente">Pendiente</option>
-          <option value="Sí">Sí</option>
-          <option value="No">No</option>
-        </select>
-      </div>
-      <div class="form-group full">
-        <label>Observaciones</label>
-        <textarea id="f-obs" placeholder="Notas adicionales..."></textarea>
-      </div>
+      <div class="fg full"><label for="mp-cliente">Cliente *</label><input class="inp" id="mp-cliente" autocomplete="off"></div>
+      <div class="fg"><label for="mp-comp">Compañía</label><input class="inp" id="mp-comp" list="dl-comp" autocomplete="off"><datalist id="dl-comp"></datalist></div>
+      <div class="fg"><label for="mp-riesgo">Riesgo</label><input class="inp" id="mp-riesgo" list="dl-riesgo" autocomplete="off"><datalist id="dl-riesgo"></datalist></div>
+      <div class="fg"><label for="mp-poliza">Nro. de póliza</label><input class="inp" id="mp-poliza" autocomplete="off"></div>
+      <div class="fg"><label for="mp-wpp">WhatsApp</label><input class="inp" id="mp-wpp" inputmode="tel" placeholder="11 2345 6789"></div>
+      <div class="fg"><label for="mp-vence">Vencimiento *</label><input class="inp" id="mp-vence" type="date"></div>
+      <div class="fg"><label for="mp-vig">Vigencia</label><select class="inp" id="mp-vig"></select></div>
+      <div class="fg full"><label for="mp-notas">Notas</label><input class="inp" id="mp-notas" autocomplete="off"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn-save" id="btn-guardar" onclick="guardar()">Guardar</button>
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn" id="mp-otra" onclick="guardarPoliza(true)">Guardar y cargar otra</button>
+      <button class="btn primary" id="mp-guardar" onclick="guardarPoliza(false)">Guardar</button>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFydbgOT0KDGjMaiE8UrJF7LCVZH3hZzwCAO4QriMnDMjfRB5PVYzqSZMlDFwv8rt8/exec";
-const MESES_ORDEN = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const { hoy, MESES, DIAS, esc, norm, p2, fechaISO, fechaCorta, fechaLarga, diasDelMes, diasEntre, toast } = DS;
 
-let renovaciones = [];
-let editandoId   = null;
-let filtroMes    = "todos";
-let filtroEstado = "todos";
+const COMPANIAS = ['Federación Patronal', 'Digna', 'Galicia', 'BBVA', 'Mercantil Andina'];
+const RIESGOS = ['Automotor', 'Hogar', 'Vida', 'ART', 'AP', 'Integral de Comercio', 'Integral de Consorcio', 'Combinado Familiar', 'RC Profesional'];
+// Texto del WhatsApp. {cliente} {poliza} {riesgo} {compania} {fecha} se reemplazan solos.
+const MSG = 'Hola {cliente}, ¿cómo estás? Te escribimos de Seguros Dragone. Te enviamos la renovación de tu póliza{riesgo}{poliza}{compania}, que vence el {fecha}. Cualquier consulta estamos a disposición. ¡Muchas gracias!';
+const DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const ETIQ = { enviar: 'Para enviar', enviada: 'Enviada', vencida: 'Vencida sin enviar', futura: 'Todavía falta' };
 
-// ── CARGA ─────────────────────────────────────────────────────────────────
+let ren = { polizas: [], estados: {}, sinId: 0 };
+let vista = { y: hoy.getFullYear(), m: hoy.getMonth() };
+let diaSel = hoy.getDate();
+let panelModo = ({ '#enviar': 'enviar', '#vencidas': 'vencidas' })[location.hash] || 'dia';
+let editId = null;
+const $ = id => document.getElementById(id);
+
 async function cargarDatos() {
+  $('last-update').textContent = 'Cargando datos...';
   try {
-    const resp = await fetch(SCRIPT_URL + "?hoja=Renovaciones&t=" + Date.now());
-    const raw  = await resp.json();
-    // Cols: id | mes | compania | asegurado | poliza | renovador | producto | enviada | obs
-    renovaciones = raw.slice(1).map(row => ({
-      id:        String(row[0]||'').trim(),
-      mes:       String(row[1]||'').trim(),
-      compania:  String(row[2]||'').trim(),
-      asegurado: String(row[3]||'').trim(),
-      poliza:    String(row[4]||'').trim(),
-      renovador: String(row[5]||'').trim(),
-      producto:  String(row[6]||'').trim(),
-      enviada:   String(row[7]||'Pendiente').trim(),
-      obs:       String(row[8]||'').trim(),
-    })).filter(r => r.asegurado !== '');
-    renderTabla();
-  } catch(e) {
-    document.getElementById('contenido').innerHTML = '<div class="empty"><div class="empty-icon">⚠</div><p>Error al cargar renovaciones.</p></div>';
-  }
-}
-
-// ── FILTROS ───────────────────────────────────────────────────────────────
-function renderFiltrosMes() {
-  const meses = [...new Set(renovaciones.map(r=>r.mes).filter(Boolean))]
-    .sort((a,b) => MESES_ORDEN.indexOf(a) - MESES_ORDEN.indexOf(b));
-  const wrap = document.getElementById('filtros-mes');
-  wrap.innerHTML = '<span class="filtros-label">MES</span>';
-  const btnT = document.createElement('button');
-  btnT.className = 'filtro-btn' + (filtroMes==='todos'?' active':'');
-  btnT.textContent = 'Todos';
-  btnT.onclick = () => setFiltroMes('todos', btnT);
-  wrap.appendChild(btnT);
-  meses.forEach(m => {
-    const btn = document.createElement('button');
-    btn.className = 'filtro-btn' + (filtroMes===m?' active':'');
-    btn.textContent = m;
-    btn.onclick = () => setFiltroMes(m, btn);
-    wrap.appendChild(btn);
-  });
-}
-
-function setFiltroMes(val, btn) {
-  filtroMes = val;
-  document.querySelectorAll('#filtros-mes .filtro-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTabla();
-}
-
-function setFiltroEstado(val, btn) {
-  filtroEstado = val;
-  document.querySelectorAll('#filtros-estado .filtro-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderTabla();
-}
-
-// ── RENDER ────────────────────────────────────────────────────────────────
-function renderTabla() {
-  renderFiltrosMes();
-  const busqueda = (document.getElementById('search').value||'').toLowerCase();
-  const filtrados = renovaciones.filter(r => {
-    if (filtroMes !== 'todos' && r.mes !== filtroMes) return false;
-    if (filtroEstado !== 'todos' && r.enviada !== filtroEstado) return false;
-    if (busqueda) {
-      const txt = (r.asegurado+r.compania+r.poliza+r.producto+r.renovador).toLowerCase();
-      if (!txt.includes(busqueda)) return false;
+    let [pol, est] = await Promise.all([DS.hoja('Vencimientos'), DS.hojaOpcional('RenovacionesEstado')]);
+    ren = DS.leerRenovaciones(pol, est);
+    if (ren.sinId) {                       // pólizas cargadas a mano en el Sheets: se les asigna el ID y se vuelve a leer
+      await DS.post({ action: 'asignar_ids_venc' });
+      ren = DS.leerRenovaciones(await DS.hoja('Vencimientos'), est);
     }
-    return true;
-  });
-
-  document.getElementById('stat-total').textContent = renovaciones.length;
-  document.getElementById('stat-si').textContent    = renovaciones.filter(r=>r.enviada==='Sí').length;
-  document.getElementById('stat-pend').textContent  = renovaciones.filter(r=>r.enviada==='Pendiente').length;
-  document.getElementById('stat-no').textContent    = renovaciones.filter(r=>r.enviada==='No').length;
-
-  if (filtrados.length === 0) {
-    document.getElementById('contenido').innerHTML =
-      '<div class="empty"><div class="empty-icon">📋</div><p>' +
-      (renovaciones.length===0 ? 'Todavía no hay renovaciones registradas.' : 'No hay renovaciones que coincidan con los filtros.') +
-      '</p></div>';
-    return;
+    $('aviso-setup').innerHTML = '';
+    $('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
+  } catch (err) {
+    $('last-update').textContent = 'Sin conexión con la planilla';
+    $('aviso-setup').innerHTML = '<div class="notice"><strong>No pude leer la hoja Vencimientos.</strong> Si es la primera vez que abrís esta versión, falta instalar <em>Sistema.gs</em> en el Apps Script y ejecutar <em>setupSistema</em> una vez. Si ya está hecho, revisá la conexión y recargá la página.</div>';
   }
-
-  let html = `<div class="tabla-wrap"><table>
-    <thead><tr>
-      <th>Mes</th><th>Compañía</th><th>Asegurado</th><th>Póliza</th>
-      <th>Renovada por</th><th>Producto</th><th>WPP</th><th>Observaciones</th><th>Acciones</th>
-    </tr></thead><tbody>`;
-
-  filtrados.forEach(r => {
-    const badgeClass = r.enviada==='Sí' ? 'si' : r.enviada==='No' ? 'no' : 'pend';
-    const badgeLabel = r.enviada==='Sí' ? '✓ Enviado' : r.enviada==='No' ? '✕ No enviado' : '⏳ Pendiente';
-    html += `<tr>
-      <td class="td-mes">${r.mes}</td>
-      <td class="td-compania">${r.compania}</td>
-      <td class="td-asegurado">${r.asegurado}</td>
-      <td class="td-poliza">${r.poliza||'—'}</td>
-      <td class="td-renovador">${r.renovador||'—'}</td>
-      <td><span class="td-producto">${r.producto||'—'}</span></td>
-      <td><span class="badge ${badgeClass}" onclick="ciclarEstado('${r.id}')" title="Click para cambiar estado"><span class="badge-dot"></span>${badgeLabel}</span></td>
-      <td class="td-obs" title="${r.obs}">${r.obs||''}</td>
-      <td><div class="td-acciones">
-        <button class="btn-wpp" onclick="copiarWPP('${r.id}')">📱 WPP</button>
-        <button class="btn-accion" onclick="editarRenovacion('${r.id}')">Editar</button>
-        <button class="btn-accion del" onclick="eliminarRenovacion('${r.id}')">✕</button>
-      </div></td>
-    </tr>`;
-  });
-
-  html += '</tbody></table></div>';
-  document.getElementById('contenido').innerHTML = html;
+  renderTodo();
 }
 
-// ── CICLAR ESTADO — usa ID único, no rowIndex ─────────────────────────────
-async function ciclarEstado(id) {
-  const r = renovaciones.find(x => x.id === id);
-  if (!r) return;
-  const ciclo = { 'Pendiente':'Sí', 'Sí':'No', 'No':'Pendiente' };
-  const nuevoEstado = ciclo[r.enviada] || 'Pendiente';
-  r.enviada = nuevoEstado;
-  renderTabla();
-  try {
-    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'eliminar_renovacion', id }) });
-    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
-      action:'agregar_renovacion', id,
-      mes:r.mes, compania:r.compania, asegurado:r.asegurado,
-      poliza:r.poliza, renovador:r.renovador, producto:r.producto,
-      enviada:nuevoEstado, obs:r.obs
-    })});
-    mostrarToast('Estado actualizado: ' + nuevoEstado);
-    setTimeout(() => cargarDatos(), 1800);
-  } catch(e) {
-    mostrarToast('Error al actualizar estado');
-  }
+function filtradas(y, m) {
+  const comp = $('f-comp').value, riesgo = $('f-riesgo').value, q = norm($('f-busq').value);
+  return DS.renovacionesDelMes(ren, y, m).filter(o =>
+    (!comp || o.p.compania === comp) && (!riesgo || o.p.riesgo === riesgo) &&
+    (!q || norm(o.p.cliente + ' ' + o.p.poliza + ' ' + o.p.compania).includes(q)));
 }
 
-// ── COPIAR WPP — firma corregida a "Seguros Dragone" ─────────────────────
-function copiarWPP(id) {
-  const r = renovaciones.find(x => x.id === id);
-  if (!r) return;
-  const msg =
-    '🔄 *Renovación de póliza*\n\n' +
-    'Estimado/a *' + r.asegurado + '*, le informamos que su póliza' +
-    (r.producto ? ' de *' + r.producto + '*' : '') +
-    (r.poliza   ? ' N° ' + r.poliza : '') +
-    ' con *' + r.compania + '* corresponde al mes de *' + r.mes + '*.\n\n' +
-    'Quedamos a su disposición ante cualquier consulta.\n\n' +
-    '_Seguros Dragone_';
-
-  navigator.clipboard.writeText(msg).then(() => {
-    mostrarToast('📱 Mensaje copiado — pegalo en WhatsApp');
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = msg;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    mostrarToast('📱 Mensaje copiado');
-  });
-}
-
-// ── MODAL ─────────────────────────────────────────────────────────────────
-function abrirModal() {
-  editandoId = null;
-  document.getElementById('modal-title').innerHTML = 'Nueva <span>renovación</span>';
-  ['f-compania','f-asegurado','f-poliza','f-renovador','f-producto','f-obs'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('f-mes').value = '';
-  document.getElementById('f-enviada').value = 'Pendiente';
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-function editarRenovacion(id) {
-  const r = renovaciones.find(x => x.id === id);
-  if (!r) return;
-  editandoId = id;
-  document.getElementById('modal-title').innerHTML = 'Editar <span>renovación</span>';
-  document.getElementById('f-mes').value       = r.mes;
-  document.getElementById('f-compania').value  = r.compania;
-  document.getElementById('f-asegurado').value = r.asegurado;
-  document.getElementById('f-poliza').value    = r.poliza;
-  document.getElementById('f-renovador').value = r.renovador;
-  document.getElementById('f-producto').value  = r.producto;
-  document.getElementById('f-enviada').value   = r.enviada;
-  document.getElementById('f-obs').value       = r.obs;
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-function cerrarModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-  editandoId = null;
-}
-
-async function guardar() {
-  const mes       = document.getElementById('f-mes').value;
-  const compania  = document.getElementById('f-compania').value.trim();
-  const asegurado = document.getElementById('f-asegurado').value.trim();
-  if (!mes || !compania || !asegurado) { mostrarToast('Completá Mes, Compañía y Asegurado'); return; }
-
-  const btn = document.getElementById('btn-guardar');
-  btn.disabled = true; btn.textContent = 'Guardando...';
-
-  const payload = {
-    mes, compania, asegurado,
-    poliza:    document.getElementById('f-poliza').value.trim(),
-    renovador: document.getElementById('f-renovador').value.trim(),
-    producto:  document.getElementById('f-producto').value.trim(),
-    enviada:   document.getElementById('f-enviada').value,
-    obs:       document.getElementById('f-obs').value.trim(),
+function renderTodo() {
+  const llenar = (id, base, campo, todas) => {
+    const vals = [...new Set([...base, ...ren.polizas.map(p => p[campo]).filter(Boolean)])];
+    const sel = $(id), previo = sel.value;
+    sel.innerHTML = `<option value="">${todas}</option>` + vals.map(v => `<option${v === previo ? ' selected' : ''}>${esc(v)}</option>`).join('');
+    return vals;
   };
+  $('dl-comp').innerHTML = llenar('f-comp', COMPANIAS, 'compania', 'Todas las compañías').map(v => `<option value="${esc(v)}">`).join('');
+  $('dl-riesgo').innerHTML = llenar('f-riesgo', RIESGOS, 'riesgo', 'Todos los riesgos').map(v => `<option value="${esc(v)}">`).join('');
+  $('mp-vig').innerHTML = '<option value="">No se repite</option>' + ['Mensual','Bimestral','Trimestral','Cuatrimestral','Semestral','Anual'].map(v => `<option>${v}</option>`).join('');
+  $('tab-count').textContent = ren.polizas.filter(p => p.activo).length || '';
+  renderCalendario(); renderPolizas();
+}
 
+function verTab(t) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + t));
+}
+
+// ── CALENDARIO ─────────────────────────────────────────────────────────────
+function moverMes(d) {
+  const f = new Date(vista.y, vista.m + d, 1);
+  vista = { y: f.getFullYear(), m: f.getMonth() };
+  diaSel = (vista.y === hoy.getFullYear() && vista.m === hoy.getMonth()) ? hoy.getDate() : 1;
+  if (panelModo !== 'dia') panelModo = 'dia';
+  renderCalendario();
+}
+function irHoy() { vista = { y: hoy.getFullYear(), m: hoy.getMonth() }; diaSel = hoy.getDate(); panelModo = 'dia'; renderCalendario(); }
+function selDia(d) { diaSel = d; panelModo = 'dia'; renderCalendario(); }
+function setPanelModo(m) { panelModo = m; renderCalendario(); }
+
+function renderCalendario() {
+  const { y, m } = vista;
+  $('mes-label').textContent = MESES[m] + ' ' + y;
+  const ocs = filtradas(y, m);
+  const paraEnviar = DS.renovacionesParaEnviar(ren);
+  const n = e => ocs.filter(o => o.estado === e).length;
+  $('cal-metrics').innerHTML = `
+    <div class="metric"><div class="metric-val c-gold">${ocs.length}</div><div class="metric-lbl">Vencen en ${MESES[m]}</div></div>
+    <div class="metric"><div class="metric-val c-ok">${n('enviada')}${ocs.length ? `<small>${Math.round(n('enviada') / ocs.length * 100)}%</small>` : ''}</div><div class="metric-lbl">Enviadas</div></div>
+    <div class="metric"><div class="metric-val c-warn">${paraEnviar.filter(o => o.estado === 'enviar').length}</div><div class="metric-lbl">Para enviar (próximos ${DS.DIAS_ENVIO} días)</div></div>
+    <div class="metric"><div class="metric-val c-danger">${paraEnviar.filter(o => o.estado === 'vencida').length}</div><div class="metric-lbl">Vencidas sin enviar</div></div>`;
+
+  const porDia = {};
+  ocs.forEach(o => (porDia[o.dia] = porDia[o.dia] || []).push(o));
+  const dim = diasDelMes(y, m), offset = (new Date(y, m, 1).getDay() + 6) % 7;
+  const esMesActual = y === hoy.getFullYear() && m === hoy.getMonth();
+  let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for (let i = 0; i < offset; i++) html += '<div class="cal-cell out"></div>';
+  for (let d = 1; d <= dim; d++) {
+    const lista = porDia[d] || [];
+    const cls = ['cal-cell', esMesActual && d === hoy.getDate() ? 'today' : '', panelModo === 'dia' && d === diaSel ? 'sel' : ''].join(' ');
+    html += `<div class="${cls}" onclick="selDia(${d})">
+      <div class="cal-num"><b>${d}</b>${lista.length ? `<span>${lista.length} pól.</span>` : ''}</div>
+      <div class="chips">${lista.slice(0, 3).map(o => `<div class="chip ${o.estado}" title="${esc(o.p.cliente + ' · ' + o.p.riesgo + ' · ' + o.p.compania)}"><b>${esc(o.p.cliente)}</b><small>${esc([o.p.riesgo, o.p.compania].filter(Boolean).join(' · '))}</small></div>`).join('')}
+      ${lista.length > 3 ? `<div class="chip-more">+${lista.length - 3} más</div>` : ''}</div>
+    </div>`;
+  }
+  for (let i = 0; i < (7 - (offset + dim) % 7) % 7; i++) html += '<div class="cal-cell out"></div>';
+  $('cal').innerHTML = html;
+
+  ['dia', 'enviar', 'vencidas'].forEach(k => $('seg-' + k).classList.toggle('active', panelModo === k));
+  let lista, titulo, sub, vacio;
+  if (panelModo === 'dia') {
+    lista = porDia[diaSel] || [];
+    titulo = fechaLarga(new Date(y, m, diaSel));
+    sub = lista.length ? lista.length + (lista.length === 1 ? ' póliza vence' : ' pólizas vencen') + ' este día' : '';
+    vacio = 'No vence ninguna póliza este día.';
+  } else if (panelModo === 'enviar') {
+    lista = paraEnviar.filter(o => o.estado === 'enviar');
+    titulo = 'Para enviar'; sub = lista.length + (lista.length === 1 ? ' póliza vence' : ' pólizas vencen') + ' en los próximos ' + DS.DIAS_ENVIO + ' días sin enviar';
+    vacio = 'No hay renovaciones pendientes de envío.';
+  } else {
+    lista = paraEnviar.filter(o => o.estado === 'vencida');
+    titulo = 'Vencidas sin enviar'; sub = lista.length + (lista.length === 1 ? ' póliza ya venció y no figura como enviada' : ' pólizas ya vencieron y no figuran como enviadas');
+    vacio = 'No hay pólizas vencidas sin enviar.';
+  }
+  $('day-title').textContent = titulo; $('day-sub').textContent = sub;
+  $('day-list').innerHTML = lista.length ? lista.map(itemHTML).join('') :
+    `<div class="empty">${ren.polizas.length ? vacio : 'Todavía no hay pólizas cargadas.<br>Cargalas en la hoja <strong>Vencimientos</strong> del Sheets o con <strong>+ Nueva póliza</strong>.'}</div>`;
+}
+
+function mensaje(o) {
+  const p = o.p;
+  return MSG.replace('{cliente}', p.cliente).replace('{fecha}', fechaCorta(o.fecha))
+    .replace('{riesgo}', p.riesgo ? ' de ' + p.riesgo : '').replace('{poliza}', p.poliza ? ' N° ' + p.poliza : '')
+    .replace('{compania}', p.compania ? ' en ' + p.compania : '');
+}
+
+function itemHTML(o) {
+  const p = o.p, link = DS.wppLink(p.whatsapp, mensaje(o));
+  const dias = diasEntre(hoy, o.fecha);
+  const cuando = dias === 0 ? 'Vence hoy' : dias > 0 ? `Vence el ${fechaCorta(o.fecha)} · en ${dias} ${dias === 1 ? 'día' : 'días'}` : `Venció el ${fechaCorta(o.fecha)} · hace ${-dias} ${dias === -1 ? 'día' : 'días'}`;
+  const args = `'${esc(p.id)}','${o.clave}'`;
+  return `<div class="item">
+    <div class="item-top">
+      <div><div class="item-name">${esc(p.cliente)}</div><div class="item-meta">${cuando}${p.poliza ? ' · N° ' + esc(p.poliza) : ''}</div></div>
+      <span class="badge ${o.estado}">${ETIQ[o.estado]}</span>
+    </div>
+    <div class="item-tags">${p.compania ? `<span class="tag comp">${esc(p.compania)}</span>` : ''}${p.riesgo ? `<span class="tag">${esc(p.riesgo)}</span>` : ''}${p.vigencia ? `<span class="tag">${esc(p.vigencia)}</span>` : ''}</div>
+    ${p.notas ? `<div class="item-notes">${esc(p.notas)}</div>` : ''}
+    <div class="item-actions">
+      <a class="btn-wpp${link ? '' : ' off'}" href="${link || '#'}" target="_blank" rel="noopener" onclick="setTimeout(()=>setEnviada(${args},true),400)">WhatsApp${link ? '' : ' (sin número)'}</a>
+      <button class="tog${o.st.enviada ? ' on-pago' : ''}" onclick="setEnviada(${args},${!o.st.enviada})">${o.st.enviada ? '✓ Enviada' : 'Marcar enviada'}</button>
+      <button class="tog" onclick="abrirPoliza('${esc(p.id)}')">Editar</button>
+    </div>
+  </div>`;
+}
+
+async function setEnviada(id, clave, valor) {
+  const k = id + '|' + clave, antes = ren.estados[k];
+  if (antes && antes.enviada === valor) return;
+  ren.estados[k] = { enviada: valor, fechaEnvio: valor ? fechaISO(new Date()) : '' };
+  renderCalendario();
+  try { await DS.post({ action: 'estado_venc', id, fecha: clave, ...ren.estados[k] }); }
+  catch (e) {
+    if (antes) ren.estados[k] = antes; else delete ren.estados[k];
+    renderCalendario(); toast('No se pudo guardar el cambio: ' + e.message, true);
+  }
+}
+
+// ── PÓLIZAS ────────────────────────────────────────────────────────────────
+function proximoVencimiento(p) {
+  if (!p.vence) return null;
+  if (!p.meses || p.vence >= hoy) return p.vence;
+  let y = p.vence.getFullYear(), m = p.vence.getMonth(), d;
+  do { m += p.meses; d = new Date(y, m, Math.min(p.vence.getDate(), diasDelMes(y, m))); } while (d < hoy);
+  return d;
+}
+
+function renderPolizas() {
+  const q = norm($('p-busq').value);
+  const lista = ren.polizas.filter(p => !q || norm(p.cliente + ' ' + p.compania + ' ' + p.poliza).includes(q))
+    .map(p => ({ p, prox: proximoVencimiento(p) })).sort((a, b) => (a.prox || 9e15) - (b.prox || 9e15));
+  $('p-body').innerHTML = lista.length ? lista.map(({ p, prox }) => `
+    <tr class="${p.activo ? '' : 'off'}">
+      <td><strong>${esc(p.cliente)}</strong>${p.notas ? `<div class="item-notes">${esc(p.notas)}</div>` : ''}</td>
+      <td>${esc(p.compania) || '—'}</td><td>${esc(p.riesgo) || '—'}</td><td class="mono">${esc(p.poliza) || '—'}</td>
+      <td>${esc(p.vigencia) || 'No se repite'}</td>
+      <td class="mono">${prox ? p2(prox.getDate()) + '/' + p2(prox.getMonth() + 1) + '/' + prox.getFullYear() : '<span style="color:var(--danger)">Falta la fecha</span>'}</td>
+      <td class="mono">${esc(p.whatsapp) || '—'}</td>
+      <td><div class="row-actions">
+        <button class="btn sm" onclick="abrirPoliza('${esc(p.id)}')">Editar</button>
+        <button class="btn sm" onclick="pausarPoliza('${esc(p.id)}')">${p.activo ? 'Dar de baja' : 'Reactivar'}</button>
+      </div></td>
+    </tr>`).join('') :
+    `<tr><td colspan="8"><div class="empty">${ren.polizas.length ? 'Ninguna póliza coincide con la búsqueda.' : 'Todavía no hay pólizas cargadas.'}</div></td></tr>`;
+}
+
+function abrirPoliza(id) {
+  editId = id || null;
+  const p = id ? ren.polizas.find(x => x.id === id) : null;
+  $('mp-titulo').textContent = p ? 'Editar póliza' : 'Nueva póliza';
+  $('mp-cliente').value = p ? p.cliente : ''; $('mp-comp').value = p ? p.compania : '';
+  $('mp-riesgo').value = p ? p.riesgo : ''; $('mp-poliza').value = p ? p.poliza : '';
+  $('mp-wpp').value = p ? p.whatsapp : ''; $('mp-vence').value = p && p.vence ? fechaISO(p.vence) : '';
+  $('mp-vig').value = p ? (p.meses ? p.vigencia.charAt(0).toUpperCase() + p.vigencia.slice(1).toLowerCase() : '') : 'Anual';
+  $('mp-notas').value = p ? p.notas : '';
+  $('mp-otra').style.display = p ? 'none' : '';
+  $('modal-poliza').classList.add('open'); $('mp-cliente').focus();
+}
+function cerrarModal() { $('modal-poliza').classList.remove('open'); }
+
+function aFila(p) {
+  return { id: p.id, cliente: p.cliente, whatsapp: p.whatsapp, compania: p.compania, poliza: p.poliza, riesgo: p.riesgo,
+           vencimiento: p.vence ? fechaISO(p.vence) : '', vigencia: p.vigencia, activo: p.activo, notas: p.notas };
+}
+
+async function guardarPoliza(otra) {
+  const cliente = $('mp-cliente').value.trim(), vence = DS.parseFecha($('mp-vence').value);
+  if (!cliente) { toast('Falta el nombre del cliente', true); $('mp-cliente').focus(); return; }
+  if (!vence) { toast('Falta la fecha de vencimiento', true); $('mp-vence').focus(); return; }
+  const previo = editId ? ren.polizas.find(x => x.id === editId) : null, vig = $('mp-vig').value;
+  const p = { id: previo ? previo.id : DS.nuevoId('REN'), cliente, whatsapp: $('mp-wpp').value.replace(/\D/g, ''),
+    compania: $('mp-comp').value.trim(), poliza: $('mp-poliza').value.trim(), riesgo: $('mp-riesgo').value.trim(),
+    vence, vigencia: vig, meses: ({ mensual: 1, bimestral: 2, trimestral: 3, cuatrimestral: 4, semestral: 6, anual: 12 })[vig.toLowerCase()] || 0,
+    activo: previo ? previo.activo : true, notas: $('mp-notas').value.trim() };
+  $('mp-guardar').disabled = $('mp-otra').disabled = true;
   try {
-    if (editandoId) {
-      await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'eliminar_renovacion', id: editandoId }) });
-      payload.id = editandoId;
-    }
-    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'agregar_renovacion', ...payload }) });
-    cerrarModal();
-    mostrarToast(editandoId ? 'Renovación actualizada ✓' : 'Renovación guardada ✓');
-    setTimeout(() => cargarDatos(), 1800);
-  } catch(e) { mostrarToast('Error al guardar. Reintentá.'); }
-
-  btn.disabled = false; btn.textContent = 'Guardar';
+    await DS.post({ action: 'guardar_venc', poliza: aFila(p) });
+    if (previo) ren.polizas[ren.polizas.indexOf(previo)] = p; else ren.polizas.push(p);
+    toast(previo ? 'Póliza actualizada' : 'Póliza cargada');
+    renderTodo();
+    if (otra) abrirPoliza(); else cerrarModal();
+  } catch (e) { toast('No se pudo guardar: ' + e.message, true); }
+  $('mp-guardar').disabled = $('mp-otra').disabled = false;
 }
 
-async function eliminarRenovacion(id) {
-  const r = renovaciones.find(x => x.id === id);
-  if (!r || !confirm('¿Eliminás la renovación de "' + r.asegurado + '"?')) return;
-  try {
-    await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'eliminar_renovacion', id }) });
-    mostrarToast('Renovación eliminada');
-    setTimeout(() => cargarDatos(), 1800);
-  } catch(e) { mostrarToast('Error al eliminar'); }
+async function pausarPoliza(id) {
+  const p = ren.polizas.find(x => x.id === id); if (!p) return;
+  p.activo = !p.activo; renderTodo();
+  try { await DS.post({ action: 'guardar_venc', poliza: aFila(p) }); toast(p.activo ? 'Póliza reactivada' : 'Póliza dada de baja: deja de aparecer en el calendario'); }
+  catch (e) { p.activo = !p.activo; renderTodo(); toast('No se pudo guardar: ' + e.message, true); }
 }
 
-function mostrarToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
-}
+$('modal-poliza').addEventListener('click', e => { if (e.target.id === 'modal-poliza') cerrarModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarModal(); });
 
-document.getElementById('modal-overlay').addEventListener('click', function(e) {
-  if (e.target === this) cerrarModal();
-});
-
+renderTodo();
 cargarDatos();
 </script>
 </body>

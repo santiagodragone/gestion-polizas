@@ -1,0 +1,65 @@
+/* TAREAS — lista "Mi día". La usan tareas.html y el inicio. Los colores salen de tema.css. */
+.page-tareas { max-width: 920px; }
+
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex: none; }
+.avatar.sm { width: 24px; height: 24px; font-size: 10px; }
+
+/* Selector de persona */
+.personas { display: flex; gap: 10px; flex-wrap: wrap; margin: 1.2rem 0 1.4rem; }
+.persona { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; text-align: left; transition: border-color .12s, box-shadow .12s; }
+.persona:hover { border-color: var(--text-2); }
+.persona.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.persona.active .avatar { background: var(--accent); color: var(--on-accent); }
+.persona-txt strong { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.2; }
+.persona-txt small { font-size: 11.5px; color: var(--text-2); }
+.persona-txt em { font-style: normal; color: var(--danger); font-weight: 500; }
+
+/* Avance del día */
+.progreso { margin-bottom: 1.2rem; }
+.progreso-txt { font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+.progreso-txt strong { color: var(--text); font-weight: 600; }
+.progreso-barra { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.progreso-barra i { display: block; height: 100%; border-radius: 3px; background: var(--ok); transition: width .3s; }
+
+/* Alta rápida */
+.alta { display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); margin-bottom: 1.6rem; flex-wrap: wrap; }
+.alta:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.alta-mas { font-size: 20px; color: var(--text-2); line-height: 1; }
+.alta-titulo { flex: 1 1 220px; min-width: 0; border: none; outline: none; background: transparent; color: var(--text); font-size: 15px; padding: 8px 4px; }
+.alta-titulo::placeholder { color: var(--text-2); }
+.alta-campo { border: 1px solid transparent; background: var(--surface-2); color: var(--text); border-radius: 8px; padding: 6px 8px; font-size: 12.5px; outline: none; max-width: 150px; }
+.alta-campo:focus { border-color: var(--accent); }
+
+/* Grupos y filas */
+.grupo { margin-bottom: 1.6rem; }
+.grupo h2 { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.grupo h2 span { font-size: 11.5px; font-weight: 500; background: var(--surface-2); padding: 1px 8px; border-radius: 10px; }
+.g-atrasadas h2 { color: var(--danger); }
+.g-atrasadas h2 span { background: var(--danger-soft); }
+.g-hoy h2 { color: var(--text); font-size: 15px; }
+.vacio { font-size: 13px; color: var(--text-2); padding: 14px 16px; border: 1px dashed var(--line); border-radius: 12px; }
+
+.tarea { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 6px; transition: border-color .12s; }
+.tarea:hover { border-color: var(--text-2); }
+.check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--text-2); background: transparent; color: transparent; cursor: pointer; flex: none; display: flex; align-items: center; justify-content: center; padding: 0; transition: all .12s; }
+.check svg { width: 13px; height: 13px; }
+.check:hover { border-color: var(--ok); color: var(--ok); }
+.tarea.hecha .check { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.tarea-cuerpo { flex: 1; min-width: 0; background: none; border: none; text-align: left; cursor: pointer; color: var(--text); padding: 2px 0; }
+.tarea-titulo { display: block; font-size: 14.5px; font-weight: 500; line-height: 1.35; }
+.tarea-notas { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tarea.hecha .tarea-titulo { text-decoration: line-through; color: var(--text-2); font-weight: 400; }
+.estrella { font-style: normal; color: var(--warn); margin-right: 6px; }
+.tarea.importante { border-left: 3px solid var(--warn); }
+.tarea-meta { display: flex; align-items: center; gap: 6px; flex: none; }
+.pill { font-size: 11.5px; font-weight: 500; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); color: var(--text-2); white-space: nowrap; }
+.pill.rojo { background: var(--danger-soft); color: var(--danger); }
+.mini { font-size: 11.5px; padding: 3px 8px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-2); cursor: pointer; white-space: nowrap; }
+.mini:hover { color: var(--text); border-color: var(--text-2); }
+
+@media (max-width: 700px) {
+  .tarea { flex-wrap: wrap; }
+  .tarea-meta { width: 100%; padding-left: 34px; }
+  .alta-campo { flex: 1 1 30%; max-width: none; }
+  .persona { padding: 6px 12px 6px 6px; }
+}
