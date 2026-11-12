@@ -45,7 +45,7 @@
   .bloque-titulo a{margin-left:auto;font-weight:500;color:var(--accent);text-decoration:none;font-size:12.5px;}
   .bloque-titulo a:hover{text-decoration:underline;}
 
-  .hoy-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:2.2rem;}
+  .hoy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:2.2rem;}
   .hoy-card{display:flex;flex-direction:column;gap:6px;padding:18px 18px 16px;border-radius:16px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--text);transition:border-color .15s,box-shadow .15s,transform .15s;min-height:148px;}
   .hoy-card:hover{border-color:var(--accent);box-shadow:var(--shadow-lg);transform:translateY(-2px);}
   .hoy-top{display:flex;align-items:center;justify-content:space-between;}
@@ -65,7 +65,7 @@
   .personas.compacto .persona{padding:4px 12px 4px 4px;}
   .personas.compacto .avatar{width:26px;height:26px;font-size:10px;}
   .personas.compacto .persona-txt small{display:none;}
-  @media(max-width:900px){.hoy-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  
   @media(max-width:480px){.hoy-grid{grid-template-columns:1fr;}.hoy-card{min-height:0;}.saludo{font-size:1.5rem;}}
 </style>
 <link rel="stylesheet" href="tema.css">
@@ -84,18 +84,17 @@
         <span>Sistema de gestión</span>
       </div>
     </div>
-    <div class="login-title">Bienvenido de <em>vuelta</em></div>
-    <div class="login-sub">Ingresá tus credenciales para acceder al sistema.</div>
-    <div class="login-group">
-      <label>Usuario</label>
-      <input type="text" id="login-user" placeholder="Usuario" autocomplete="username">
-    </div>
-    <div class="login-group">
-      <label>Contraseña</label>
-      <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password">
-    </div>
-    <div class="login-error" id="login-error">Usuario o contraseña incorrectos.</div>
-    <button class="btn-login" id="btn-login" onclick="intentarLogin()">Ingresar al sistema</button>
+    <div class="login-title">Bienvenido</div>
+    <div class="login-sub">Ingresá la clave del equipo para entrar al sistema.</div>
+    <form onsubmit="intentarLogin(event)">
+      <input type="text" autocomplete="username" value="equipo" hidden>
+      <div class="login-group">
+        <label for="login-pass">Clave</label>
+        <input type="password" id="login-pass" placeholder="Clave" autocomplete="current-password" required>
+      </div>
+      <div class="login-error" id="login-error"></div>
+      <button class="btn-login" id="btn-login" type="submit">Ingresar al sistema</button>
+    </form>
     <div class="login-footer">Seguros Dragone · Acceso restringido</div>
   </div>
 </div>
@@ -123,50 +122,30 @@
 
 <script>
 
-  const USUARIO  = "EquipoDragone";
-  const PASSWORD = "Rober1347";
-  const SESSION_KEY = "sd_auth";
-  const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 horas
+// La clave no está en este archivo: la valida la planilla y devuelve un pase que vence solo.
+  const verificarSesion = () => !!temaSesion.leer();
 
-  function verificarSesion() {
-    const session = localStorage.getItem(SESSION_KEY);
-    if (!session) return false;
-    const { ts } = JSON.parse(session);
-    return (Date.now() - ts) < SESSION_DURATION;
+  async function intentarLogin(ev) {
+    ev.preventDefault();
+    const campo = document.getElementById('login-pass'), err = document.getElementById('login-error'), btn = document.getElementById('btn-login');
+    const fallo = msg => { err.textContent = msg; err.classList.add('show'); btn.disabled = false; btn.textContent = 'Ingresar al sistema'; campo.value = ''; campo.focus(); };
+    err.classList.remove('show'); btn.disabled = true; btn.textContent = 'Ingresando...';
+    try {
+      const r = await fetch(DS.SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'login', clave: campo.value }) });
+      const j = await r.json();
+      if (j.ok) { temaSesion.guardar(j.token, j.horas || 12); campo.value = ''; mostrarSistema(); }
+      else if (j.error === 'sin_configurar') { temaSesion.guardar('', 12); sinClave = true; campo.value = ''; mostrarSistema(); }   // todavía no se definió una clave
+      else if (j.error === 'bloqueado') fallo('Demasiados intentos. Esperá 10 minutos y probá de nuevo.');
+      else fallo('Clave incorrecta.');
+    } catch (e) { fallo('No se pudo conectar con la planilla. Revisá la conexión.'); }
   }
+  let sinClave = false;
 
-  function intentarLogin() {
-    const user = document.getElementById('login-user').value.trim();
-    const pass = document.getElementById('login-pass').value;
-    const err  = document.getElementById('login-error');
-    const btn  = document.getElementById('btn-login');
-
-    if (user === USUARIO && pass === PASSWORD) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
-      err.classList.remove('show');
-      btn.textContent = 'Ingresando...';
-      btn.disabled = true;
-      setTimeout(() => mostrarSistema(), 400);
-    } else {
-      err.classList.add('show');
-      document.getElementById('login-pass').value = '';
-      document.getElementById('login-pass').focus();
-    }
-  }
-
-  
   function mostrarSistema() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sistema').style.display = 'block';
     iniciar();
   }
-
-  // Enter en los campos
-  ['login-user','login-pass'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') intentarLogin();
-    });
-  });
 
 
 
@@ -179,10 +158,11 @@
     reclamo: ic('<path d="M12 8v5M12 16.5v.5"/><path d="M10.3 3.9L2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'),
     cupon: ic('<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19M6.5 15h4"/>'),
     envio: ic('<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/>'),
+    torta: ic('<path d="M4 20h16M5 20v-7h14v7M5 16c1.2 0 1.2-1 2.3-1s1.2 1 2.4 1 1.2-1 2.3-1 1.2 1 2.3 1 1.2-1 2.4-1 1.1 1 2.3 1M12 13V9M12 6.5c.8-.9 1-1.6 0-2.5-1 .9-.8 1.6 0 2.5z"/>'),
     tarea: ic('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16 9.5"/>')
   };
 
-  let cob = null, ren = null, tareas = null;
+  let cob = null, ren = null, tareas = null, cli = null;
   let persona = DS.recordar('dragone-persona') || '';
   const equipo = () => [...new Set([...DS.EQUIPO, ...(tareas || []).map(t => t.responsable).filter(Boolean)])];
   const deHoy = () => (tareas || []).filter(t => (!persona || t.responsable === persona) && !t.hecha && ['hoy', 'atrasadas'].includes(DS.grupoDe(t)));
@@ -201,7 +181,12 @@
       { href: 'renovaciones.html#enviar', icono: ICONOS.envio, n: env && env.length, tono: 'ambar',
         lbl: 'Pólizas para enviar', det: env ? (env.length ? (vencidas ? vencidas + (vencidas === 1 ? ' ya vencida · ' : ' ya vencidas · ') : '') + 'próximos ' + DS.DIAS_ENVIO + ' días' : 'Renovaciones al día') : '' },
       { href: 'tareas.html', icono: ICONOS.tarea, n: pend && pend.length, tono: atras ? 'rojo' : '',
-        lbl: persona ? 'Tareas de ' + persona : 'Tareas del equipo', det: pend ? (pend.length ? (atras ? atras + (atras === 1 ? ' atrasada' : ' atrasadas') : 'Para hoy') : 'Nada pendiente para hoy') : '' }
+        lbl: persona ? 'Tareas de ' + persona : 'Tareas del equipo', det: pend ? (pend.length ? (atras ? atras + (atras === 1 ? ' atrasada' : ' atrasadas') : 'Para hoy') : 'Nada pendiente para hoy') : '' },
+      (() => {
+        const sem = cli ? DS.cumpleanos(cli, 7) : null, hoyC = sem ? sem.filter(x => x.faltan === 0) : null;
+        return { href: 'clientes.html#cumples', icono: ICONOS.torta, n: hoyC && hoyC.length, tono: 'ambar', sinVerde: true, lbl: 'Cumpleaños de hoy',
+          det: sem ? (hoyC.length ? hoyC.slice(0, 2).map(x => x.c.nombre).join(', ') + (hoyC.length > 2 ? ' y ' + (hoyC.length - 2) + ' más' : '') : (sem.length ? sem.length + ' en los próximos 7 días' : 'Ninguno esta semana')) : '' };
+      })()
     ];
   }
 
@@ -211,7 +196,7 @@
     $('saludo-sub').textContent = DS.fechaLarga(hoy) + ' · esto es lo que hay para hoy';
 
     $('hoy-grid').innerHTML = tarjetas().map(t => {
-      const cargando = t.n == null, tono = cargando ? 'espera' : t.n === 0 ? 'listo' : t.tono;
+      const cargando = t.n == null, tono = cargando ? 'espera' : t.n === 0 ? (t.sinVerde ? 'espera' : 'listo') : t.tono;
       return `<a class="hoy-card ${tono}" href="${t.href}">
         <div class="hoy-top"><span class="hoy-icono">${t.icono}</span><span class="hoy-flecha">→</span></div>
         <div class="hoy-num">${cargando ? '—' : t.n}</div>
@@ -265,12 +250,13 @@
     if (iniciado) return; iniciado = true;
     render();
     // Cada bloque se carga por separado: si una hoja todavía no existe, el resto igual aparece
-    const [cup, cupEst, venc, vencEst, pend] = await Promise.all(
-      ['Cupones', 'CuponesEstado', 'Vencimientos', 'RenovacionesEstado', 'Pendientes'].map(DS.hojaOpcional));
+    const [cup, cupEst, venc, vencEst, pend, clientes] = await Promise.all(
+      ['Cupones', 'CuponesEstado', 'Vencimientos', 'RenovacionesEstado', 'Pendientes', 'Clientes'].map(DS.hojaOpcional));
+    cli = DS.leerClientes(clientes || []);
     if (cup) cob = DS.leerCobranza(cup, cupEst);
     if (venc) ren = DS.leerRenovaciones(venc, vencEst);
     if (pend) tareas = DS.leerTareas(pend);
-    if (!venc || !pend) $('aviso-setup').innerHTML = '<div class="notice">Falta instalar <em>Sistema.gs</em> en el Apps Script para ver renovaciones y tareas. Las tarjetas sin dato quedan con una raya.</div>';
+    if (sinClave) $('aviso-setup').innerHTML = '<div class="notice"><strong>El sistema todavía no tiene clave.</strong> Cualquiera con la dirección puede leer la planilla. Para protegerlo, abrí la planilla en Google Sheets y elegí el menú <em>Sistema Dragone → Definir clave de acceso</em>.</div>';
     render();
   }
 

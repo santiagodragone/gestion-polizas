@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clientes — Dragone Seguros</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="tema.css">
+<script src="tema.js"></script>
+<script src="datos.js"></script>
+<script src="importar.js"></script>
+<style>
+  .tag{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-2);margin:1px 3px 1px 0;white-space:nowrap;}
+  .tag.ramo{background:var(--accent-soft);color:var(--accent);}
+  .tag.aviso{background:var(--warn-soft);color:var(--warn);}
+  .tag.hoy{background:var(--ok-soft);color:var(--ok);}
+  .sub{font-size:12px;color:var(--text-2);margin-top:2px;}
+  tbody tr.fila{cursor:pointer;} tbody tr.fila:hover td{background:var(--surface-2);}
+  .ficha-polizas{margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line);}
+  .ficha-polizas h4{font-size:13px;font-weight:600;margin-bottom:.6rem;}
+  .pol{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .pol:last-child{border-bottom:none;} .pol small{color:var(--text-2);font-size:12px;}
+  .dup{display:flex;align-items:center;gap:1rem;padding:.9rem 1rem;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .dup:last-child{border-bottom:none;} .dup-par{flex:1;min-width:260px;font-size:13px;line-height:1.6;}
+  .imp-zona{border:1.5px dashed var(--line);border-radius:12px;padding:1.4rem;text-align:center;color:var(--text-2);font-size:13px;line-height:1.6;cursor:pointer;transition:border-color .15s,background .15s;}
+  .imp-zona:hover,.imp-zona.sobre{border-color:var(--accent);background:var(--accent-soft);} .imp-zona strong{color:var(--text);}
+  .imp-pegar{width:100%;margin-top:.7rem;font-size:12px;min-height:60px;resize:vertical;}
+  .imp-mapa{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:0 0 1rem;}
+  .imp-mapa .inp{width:100%;font-size:12.5px;padding:.4rem .5rem;}
+  .imp-resumen{display:flex;gap:8px;flex-wrap:wrap;margin:.2rem 0 .8rem;font-size:12.5px;}
+  .imp-resumen span{padding:3px 10px;border-radius:20px;background:var(--surface-2);color:var(--text-2);font-weight:500;}
+  .imp-resumen .ok{background:var(--ok-soft);color:var(--ok);} .imp-resumen .info{background:var(--info-soft);color:var(--info);} .imp-resumen .mal{background:var(--warn-soft);color:var(--warn);}
+  .imp-tabla{max-height:240px;overflow:auto;} .imp-tabla td,.imp-tabla th{padding:.45rem .7rem;font-size:12px;white-space:nowrap;}
+  @media(max-width:700px){.imp-mapa{grid-template-columns:repeat(2,minmax(0,1fr));}.oculta-cel{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-title">Clientes</div>
+  <div class="last-update" id="last-update">Cargando datos...</div>
+  <div id="avisos"></div>
+
+  <div class="toolbar">
+    <input class="inp" id="busq" placeholder="Buscar por nombre, documento, teléfono o mail..." oninput="render()" style="flex:1;min-width:220px;max-width:420px">
+    <select class="inp" id="filtro" onchange="render()" aria-label="Filtro">
+      <option value="">Todos los clientes</option>
+      <option value="sinwpp">Sin WhatsApp</option>
+      <option value="compartido">Teléfono compartido</option>
+      <option value="cumples">Próximos cumpleaños</option>
+      <option value="duplicados">Posibles duplicados</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn" onclick="abrirImportar()">Importar listado</button>
+    <button class="btn primary" onclick="abrirFicha()">+ Nuevo cliente</button>
+  </div>
+
+  <div class="metrics-row" id="metricas"></div>
+  <div class="table-wrap" id="lista"></div>
+</div>
+
+<!-- FICHA -->
+<div class="modal-bg" id="modal-ficha">
+  <div class="modal wide">
+    <h3 id="f-titulo">Nuevo cliente</h3>
+    <p class="hint">El nombre va siempre como APELLIDO NOMBRE. El WhatsApp de esta ficha es el que usan Cobranza y Renovaciones cuando la póliza no trae número.</p>
+    <div class="form-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="fg full" style="grid-column:1/-1"><label for="f-nombre">Apellido y nombre *</label><input class="inp" id="f-nombre" autocomplete="off"></div>
+      <div class="fg"><label for="f-doc">Documento</label><input class="inp" id="f-doc" inputmode="numeric" autocomplete="off"></div>
+      <div class="fg"><label for="f-cuit">CUIT / CUIL</label><input class="inp" id="f-cuit" inputmode="numeric" autocomplete="off" placeholder="Sin guiones"></div>
+      <div class="fg"><label for="f-nac">Fecha de nacimiento</label><input class="inp" id="f-nac" type="date"></div>
+      <div class="fg"><label for="f-wpp">WhatsApp</label><input class="inp" id="f-wpp" inputmode="tel" placeholder="11 2345 6789"></div>
+      <div class="fg"><label for="f-tel">Otro teléfono</label><input class="inp" id="f-tel" autocomplete="off"></div>
+      <div class="fg"><label for="f-mail">Mail</label><input class="inp" id="f-mail" type="email" autocomplete="off"></div>
+      <div class="fg" style="grid-column:span 2"><label for="f-dir">Dirección</label><input class="inp" id="f-dir" autocomplete="off"></div>
+      <div class="fg"><label for="f-loc">Localidad</label><input class="inp" id="f-loc" autocomplete="off"></div>
+      <div class="fg"><label for="f-prod">Productor</label><input class="inp" id="f-prod" list="dl-prod" autocomplete="off"><datalist id="dl-prod"></datalist></div>
+      <div class="fg" style="grid-column:span 2"><label for="f-notas">Notas</label><input class="inp" id="f-notas" autocomplete="off"></div>
+    </div>
+    <div class="ficha-polizas" id="f-polizas"></div>
+    <div class="modal-actions">
+      <button class="btn danger" id="f-borrar" onclick="borrar(this)" style="margin-right:auto">Eliminar</button>
+      <a class="btn-wpp" id="f-chat" target="_blank" rel="noopener" style="padding:.5rem 1rem;font-size:12px">Abrir WhatsApp</a>
+      <button class="btn" onclick="cerrar('modal-ficha')">Cancelar</button>
+      <button class="btn primary" id="f-guardar" onclick="guardarFicha()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORTAR -->
+<div class="modal-bg" id="modal-importar">
+  <div class="modal wide">
+    <h3>Importar listado de asegurados</h3>
+    <p class="hint">Subí el listado de asegurados tal como lo bajás de la compañía. Los clientes que ya existen (mismo CUIT, documento o nombre) no se duplican: solo se les completan los datos que faltaban.</p>
+    <div id="imp-paso1">
+      <div class="imp-zona" id="imp-zona" onclick="$('imp-archivo').click()"><strong>Elegí el archivo</strong> o arrastralo acá<br>Excel (.xlsx, .xls) o CSV
+        <input type="file" id="imp-archivo" accept=".xlsx,.xls,.csv,.txt" hidden onchange="leerArchivo(this.files[0])"></div>
+      <textarea class="inp imp-pegar" id="imp-pegar" placeholder="O copiá las filas en el Excel (con los títulos) y pegalas acá" oninput="leerPegado(this.value)"></textarea>
+    </div>
+    <div id="imp-paso2" style="display:none">
+      <div class="imp-mapa" id="imp-mapa"></div>
+      <div class="imp-resumen" id="imp-resumen"></div>
+      <div class="table-wrap imp-tabla"><table><thead><tr><th></th><th>Cliente</th><th>Documento</th><th>WhatsApp</th><th>Otro teléfono</th><th>Mail</th><th>Nacimiento</th></tr></thead><tbody id="imp-tbody"></tbody></table></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="imp-otro" onclick="reiniciarImportar()" style="margin-right:auto;display:none">Elegir otro archivo</button>
+      <button class="btn" onclick="cerrar('modal-importar')">Cancelar</button>
+      <button class="btn primary" id="imp-cargar" onclick="importar()" disabled>Importar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const { hoy, MESES, esc, norm, p2, fechaISO, fechaCorta, toast } = DS;
+const $ = id => document.getElementById(id);
+// Códigos de cobrador que usan los listados de Federación Patronal
+const COBRADORES = { '0': 'Roberto', '4': 'Emiliano Bartolomeo', '5': 'Evelin Chain', '7': 'Leonardo Bonilla', '9': 'Santiago', '22': 'Bruno Masnatta', '66': 'Marcelo Haikel' };
+const SALUDO = '¡Feliz cumpleaños! Desde Seguros Dragone te deseamos un muy buen día.';
+
+let cli = DS.indexarClientes([]), ren = { polizas: [], estados: {} }, cob = { cupones: [], estados: {} };
+let polizasDe = {};      // id de cliente -> pólizas y cupones que tiene
+let sueltos = [];        // personas con pólizas que todavía no están en Clientes
+let editId = null;
+
+async function cargarDatos() {
+  try {
+    const [c, v, cup] = await Promise.all(['Clientes', 'Vencimientos', 'Cupones'].map(DS.hojaOpcional));
+    cli = DS.leerClientes(c || []); ren = DS.leerRenovaciones(v || [], []); cob = DS.leerCobranza(cup || [], []);
+    $('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
+  } catch (e) { $('last-update').textContent = 'Sin conexión con la planilla'; }
+  if (location.hash === '#cumples') { $('filtro').value = 'cumples'; history.replaceState(null, '', location.pathname); }
+  render();
+}
+
+// Cruza las pólizas de Renovaciones y los cupones de Cobranza con los clientes
+function cruzar() {
+  polizasDe = {}; const faltan = {};
+  const anotar = (nombre, wpp, item) => {
+    const c = DS.clienteDe(cli, nombre);
+    if (c) (polizasDe[c.id] = polizasDe[c.id] || []).push(item);
+    else { const k = DS.claveNombre(nombre); if (k && !faltan[k]) faltan[k] = { nombre: nombre.trim().toUpperCase(), whatsapp: DS.celular10(wpp) }; else if (k && !faltan[k].whatsapp) faltan[k].whatsapp = DS.celular10(wpp); }
+  };
+  ren.polizas.filter(p => p.activo).forEach(p => anotar(p.cliente, p.whatsapp, { ramo: p.riesgo, compania: p.compania, poliza: p.poliza, det: p.vence ? 'Vence el ' + p2(p.vence.getDate()) + '/' + p2(p.vence.getMonth() + 1) + (p.vigencia ? ' · ' + p.vigencia.toLowerCase() : '') : '' }));
+  cob.cupones.filter(c => c.activo).forEach(c => anotar(c.cliente, c.whatsapp, { ramo: c.ramo, compania: c.compania, poliza: c.poliza, det: 'Cupón: vence los días ' + c.dia }));
+  sueltos = Object.values(faltan);
+}
+const ramosDe = c => [...new Set((polizasDe[c.id] || []).map(x => x.ramo).filter(Boolean).map(r => r.charAt(0).toUpperCase() + r.slice(1).toLowerCase()))];
+const fechaNac = d => d ? p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() : '';
+
+function duplicados() {
+  const l = cli.lista, pares = [];
+  for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length; j++) {
+    const a = l[i], b = l[j]; let motivo = '';
+    if (a.cuit && a.cuit === b.cuit) motivo = 'Mismo CUIT';
+    else if (a.documento && a.documento === b.documento) motivo = 'Mismo documento';
+    else if (a.clave === b.clave) motivo = 'Mismo nombre';
+    else if ((!a.documento || !b.documento) && (!a.cuit || !b.cuit)) {
+      const ta = a.clave.split(' '), tb = b.clave.split(' '), [ch, gr] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+      if (ch.length >= 2 && ch.every(t => gr.includes(t))) motivo = 'Nombre parecido';
+    }
+    if (motivo) pares.push({ a, b, motivo });
+  }
+  return pares;
+}
+
+function render() {
+  cruzar();
+  const q = norm($('busq').value), f = $('filtro').value, cumples = DS.cumpleanos(cli, 30);
+  $('dl-prod').innerHTML = [...new Set([...Object.values(COBRADORES), ...cli.lista.map(c => c.productor).filter(Boolean)])].map(v => `<option value="${esc(v)}">`).join('');
+  const sinWpp = cli.lista.filter(c => !c.whatsapp).length, comp = cli.lista.filter(c => c.compartido >= DS.TEL_COMPARTIDO).length;
+  $('metricas').innerHTML = `
+    <div class="metric"><div class="metric-val c-gold">${cli.lista.length}</div><div class="metric-lbl">Clientes</div></div>
+    <div class="metric"><div class="metric-val c-warn">${sinWpp}</div><div class="metric-lbl">Sin WhatsApp</div></div>
+    <div class="metric"><div class="metric-val c-danger">${comp}</div><div class="metric-lbl">Con teléfono compartido</div></div>
+    <div class="metric"><div class="metric-val c-ok">${cumples.filter(x => x.faltan <= 7).length}</div><div class="metric-lbl">Cumpleaños esta semana</div></div>`;
+  $('avisos').innerHTML = sueltos.length ? `<div class="notice">Hay <strong>${sueltos.length} ${sueltos.length === 1 ? 'persona' : 'personas'}</strong> con pólizas cargadas en Cobranza o Renovaciones que todavía no están en Clientes.
+    <button class="btn sm" style="margin-left:.6rem" onclick="agregarSueltos(this)">Agregarlas</button></div>` : '';
+
+  if (f === 'duplicados') { renderDuplicados(); return; }
+  let lista = cli.lista.filter(c => !q || norm([c.nombre, c.documento, c.cuit, c.whatsapp, c.telefono, c.mail].join(' ')).includes(q));
+  if (f === 'sinwpp') lista = lista.filter(c => !c.whatsapp);
+  if (f === 'compartido') lista = lista.filter(c => c.compartido >= DS.TEL_COMPARTIDO).sort((a, b) => a.whatsapp.localeCompare(b.whatsapp));
+  else if (f === 'cumples') { const ids = new Map(cumples.map(x => [x.c.id, x])); lista = lista.filter(c => ids.has(c.id)).sort((a, b) => ids.get(a.id).faltan - ids.get(b.id).faltan); }
+  else lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+
+  const fila = c => {
+    const cu = DS.proximoCumple(c), ramos = ramosDe(c);
+    const cuTxt = cu ? (cu.faltan === 0 ? `<span class="tag hoy">Hoy cumple ${cu.cumple}</span>` : fechaCorta(cu.fecha) + (cu.faltan <= 30 ? `<div class="sub">en ${cu.faltan} ${cu.faltan === 1 ? 'día' : 'días'}</div>` : '')) : '—';
+    const saludo = cu && cu.faltan === 0 && c.whatsapp && c.compartido < DS.TEL_COMPARTIDO ? `<a class="btn-wpp" href="${DS.wppLink(c.whatsapp, SALUDO)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Saludar</a>` : '';
+    return `<tr class="fila" onclick="abrirFicha('${esc(c.id)}')">
+      <td><strong>${esc(c.nombre)}</strong><div class="sub">${[c.documento && 'DNI ' + c.documento, c.productor].filter(Boolean).map(esc).join(' · ')}</div></td>
+      <td class="mono">${esc(c.whatsapp) || '<span style="color:var(--text-2)">—</span>'}${c.compartido >= DS.TEL_COMPARTIDO ? `<div><span class="tag aviso">Lo comparten ${c.compartido}</span></div>` : ''}${!c.whatsapp && c.telefono ? `<div class="sub">Fijo ${esc(c.telefono)}</div>` : ''}</td>
+      <td class="oculta-cel">${esc(c.mail) || '—'}</td>
+      <td>${ramos.length ? ramos.map(r => `<span class="tag ramo">${esc(r)}</span>`).join('') : '<span style="color:var(--text-2)">Sin pólizas cargadas</span>'}</td>
+      <td>${cuTxt}</td><td>${saludo}</td></tr>`;
+  };
+  $('lista').innerHTML = lista.length ? `<table><thead><tr><th>Cliente</th><th>WhatsApp</th><th class="oculta-cel">Mail</th><th>Ramos contratados</th><th>Cumpleaños</th><th></th></tr></thead>
+    <tbody>${lista.slice(0, 400).map(fila).join('')}</tbody></table>` :
+    `<div class="empty">${cli.lista.length ? 'Ningún cliente coincide con la búsqueda.' : 'Todavía no hay clientes cargados.<br>Subí un listado de asegurados con <strong>Importar listado</strong> o cargá uno con <strong>+ Nuevo cliente</strong>.'}</div>`;
+}
+
+function renderDuplicados() {
+  const pares = duplicados();
+  const linea = c => `<strong>${esc(c.nombre)}</strong> <span class="sub">${[c.documento && 'DNI ' + c.documento, c.whatsapp, c.mail].filter(Boolean).map(esc).join(' · ') || 'sin más datos'}</span>`;
+  $('lista').innerHTML = pares.length ? pares.map(p => `<div class="dup">
+      <div class="dup-par">${linea(p.a)}<br>${linea(p.b)}</div><span class="tag">${p.motivo}</span>
+      <button class="btn sm" onclick="unir('${esc(p.a.id)}','${esc(p.b.id)}',this)">Unir en uno</button></div>`).join('') :
+    '<div class="empty">No hay clientes que parezcan duplicados.</div>';
+}
+
+// ── Guardado ───────────────────────────────────────────────────────────────
+async function unir(idA, idB, btn) {
+  const a = cli.lista.find(c => c.id === idA), b = cli.lista.find(c => c.id === idB); if (!a || !b) return;
+  btn.disabled = true;
+  // Queda el nombre más completo y, de cada dato, el que no esté vacío
+  const u = { ...a, nombre: b.nombre.length > a.nombre.length ? b.nombre : a.nombre };
+  ['documento', 'cuit', 'whatsapp', 'telefono', 'mail', 'direccion', 'localidad', 'nacimiento', 'productor', 'notas'].forEach(k => { if (!u[k]) u[k] = b[k]; });
+  try {
+    await DS.post({ action: 'guardar_cliente', cliente: DS.clienteAFila(u) });
+    await DS.post({ action: 'eliminar_cliente', id: b.id });
+    cli = DS.indexarClientes(cli.lista.filter(c => c.id !== b.id).map(c => c.id === a.id ? u : c));
+    toast('Clientes unidos'); render();
+  } catch (e) { toast('No se pudo unir: ' + e.message, true); btn.disabled = false; }
+}
+
+async function agregarSueltos(btn) {
+  btn.disabled = true;
+  const nuevos = sueltos.map(s => ({ nombre: s.nombre, whatsapp: s.whatsapp, alta: fechaISO(new Date()) }));
+  try { const r = await DS.post({ action: 'importar_clientes', clientes: nuevos }); toast('Se agregaron ' + r.nuevas + ' clientes'); await cargarDatos(); }
+  catch (e) { toast('No se pudieron agregar: ' + e.message, true); btn.disabled = false; }
+}
+
+function abrirFicha(id) {
+  editId = id || null;
+  const c = id ? cli.lista.find(x => x.id === id) : null, v = k => c ? c[k] || '' : '';
+  $('f-titulo').textContent = c ? c.nombre : 'Nuevo cliente';
+  $('f-nombre').value = v('nombre'); $('f-doc').value = v('documento'); $('f-cuit').value = v('cuit');
+  $('f-nac').value = c && c.nacimiento ? fechaISO(c.nacimiento) : ''; $('f-wpp').value = v('whatsapp'); $('f-tel').value = v('telefono');
+  $('f-mail').value = v('mail'); $('f-dir').value = v('direccion'); $('f-loc').value = v('localidad'); $('f-prod').value = v('productor'); $('f-notas').value = v('notas');
+  const pol = c ? polizasDe[c.id] || [] : [];
+  $('f-polizas').innerHTML = c ? `<h4>Pólizas y cupones (${pol.length})</h4>` + (pol.length ? pol.map(x => `<div class="pol"><div><strong>${esc(x.ramo || 'Sin ramo')}</strong> · ${esc(x.compania || 'Sin compañía')}${x.poliza ? ' · N° ' + esc(x.poliza) : ''}</div><small>${esc(x.det)}</small></div>`).join('') :
+    '<div class="sub">No tiene pólizas cargadas en Cobranza ni en Renovaciones.</div>') +
+    (c.compartido >= DS.TEL_COMPARTIDO ? `<div class="notice" style="margin:1rem 0 0">Este WhatsApp figura en ${c.compartido} clientes distintos. Por eso el sistema no lo usa solo para mandar avisos: si es realmente de esta persona, no hace falta cambiar nada en las otras fichas, pero conviene revisarlas.</div>` : '') : '';
+  $('f-borrar').style.display = c ? '' : 'none'; $('f-borrar').dataset.ok = ''; $('f-borrar').textContent = 'Eliminar';
+  const link = c && c.whatsapp ? DS.wppLink(c.whatsapp, '') : '';
+  $('f-chat').style.display = link ? '' : 'none'; if (link) $('f-chat').href = link.replace(/\?text=$/, '');
+  $('modal-ficha').classList.add('open'); if (!c) $('f-nombre').focus();
+}
+function cerrar(id) { $(id).classList.remove('open'); }
+
+async function guardarFicha() {
+  const nombre = $('f-nombre').value.trim().replace(/\s+/g, ' ').toUpperCase();
+  if (!nombre) { toast('Falta el nombre del cliente', true); $('f-nombre').focus(); return; }
+  const previo = editId ? cli.lista.find(x => x.id === editId) : null;
+  const c = { id: previo ? previo.id : DS.nuevoId('CLI'), nombre, documento: DS.soloDigitos($('f-doc').value), cuit: DS.soloDigitos($('f-cuit').value),
+    whatsapp: DS.celular10($('f-wpp').value) || DS.soloDigitos($('f-wpp').value), telefono: $('f-tel').value.trim(), mail: $('f-mail').value.trim(),
+    direccion: $('f-dir').value.trim(), localidad: $('f-loc').value.trim(), nacimiento: DS.parseFecha($('f-nac').value), productor: $('f-prod').value.trim(),
+    notas: $('f-notas').value.trim(), alta: previo ? previo.alta : fechaISO(new Date()) };
+  if (!previo) {                                     // norma: no duplicar clientes
+    const otro = (c.cuit && cli.porCuit[c.cuit]) || (c.documento && cli.porDoc[c.documento]) || (cli.porClave[DS.claveNombre(nombre)] || [])[0];
+    if (otro) { toast('Ya existe: ' + otro.nombre + '. Abrí esa ficha para editarla.', true); return; }
+  }
+  $('f-guardar').disabled = true;
+  try {
+    await DS.post({ action: 'guardar_cliente', cliente: DS.clienteAFila(c) });
+    cli = DS.indexarClientes(previo ? cli.lista.map(x => x.id === c.id ? c : x) : cli.lista.concat([c]));
+    toast(previo ? 'Cliente actualizado' : 'Cliente cargado'); cerrar('modal-ficha'); render();
+  } catch (e) { toast('No se pudo guardar: ' + e.message, true); }
+  $('f-guardar').disabled = false;
+}
+
+async function borrar(btn) {
+  if (btn.dataset.ok !== '1') { btn.dataset.ok = '1'; btn.textContent = '¿Seguro? Tocá de nuevo'; return; }
+  const c = cli.lista.find(x => x.id === editId); if (!c) return;
+  try { await DS.post({ action: 'eliminar_cliente', id: c.id }); cli = DS.indexarClientes(cli.lista.filter(x => x.id !== c.id)); cerrar('modal-ficha'); render(); toast('Cliente eliminado'); }
+  catch (e) { toast('No se pudo eliminar: ' + e.message, true); }
+}
+
+// ── Importar listado de asegurados ─────────────────────────────────────────
+// Qué títulos de columna se reconocen para cada dato (sin acentos ni mayúsculas). Sumar los que falten.
+const CAMPOS = [
+  { id: 'nombre', nombre: 'Apellido y nombre *', claves: ['apellido y nombre', 'nombre y apellido', 'asegurado', 'cliente', 'tomador', 'razon social', 'nombre'] },
+  { id: 'documento', nombre: 'Documento', claves: ['documento', 'dni', 'nro documento'] },
+  { id: 'cuit', nombre: 'CUIT / CUIL', claves: ['cuit', 'cuil'] },
+  { id: 'telefono', nombre: 'Teléfono', claves: ['whatsapp', 'celular', 'movil', 'telefono', 'tel'] },
+  { id: 'mail', nombre: 'Mail', claves: ['e mail', 'email', 'mail', 'correo'] },
+  { id: 'nacimiento', nombre: 'Fecha de nacimiento', claves: ['fecha nac', 'fecha de nacimiento', 'fec nac', 'nacimiento'] },
+  { id: 'direccion', nombre: 'Dirección', claves: ['direccion', 'domicilio', 'calle'] },
+  { id: 'localidad', nombre: 'Localidad', claves: ['localidad', 'ciudad'] },
+  { id: 'productor', nombre: 'Productor / cobrador', claves: ['cobrador', 'productor'] }
+];
+let imp = null, impListas = null;
+
+function abrirImportar() { reiniciarImportar(); $('modal-importar').classList.add('open'); }
+function reiniciarImportar() {
+  imp = impListas = null;
+  $('imp-paso1').style.display = ''; $('imp-paso2').style.display = 'none'; $('imp-otro').style.display = 'none';
+  $('imp-archivo').value = ''; $('imp-pegar').value = ''; $('imp-cargar').disabled = true; $('imp-cargar').textContent = 'Importar';
+}
+async function leerArchivo(a) { if (!a) return; try { preparar(await IMP.tablaDeArchivo(a)); } catch (e) { toast('No pude leer el archivo: ' + e.message, true); } }
+function leerPegado(t) { if (t.trim().split('\n').length >= 2) preparar(IMP.tablaDeTexto(t)); }
+
+function preparar(tabla) {
+  imp = IMP.reconocer(tabla, CAMPOS);
+  if (!imp) { toast('El archivo no tiene filas para importar', true); return; }
+  $('imp-mapa').innerHTML = CAMPOS.map(k => `<div class="fg"><label for="map-${k.id}">${k.nombre}</label>
+    <select class="inp" id="map-${k.id}" onchange="imp.mapa['${k.id}']=+this.value;vistaPrevia()"><option value="-1">— No está en el archivo —</option>
+    ${imp.cols.map((c, i) => `<option value="${i}"${imp.mapa[k.id] === i ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></div>`).join('');
+  $('imp-paso1').style.display = 'none'; $('imp-paso2').style.display = ''; $('imp-otro').style.display = '';
+  vistaPrevia();
+}
+
+function armar() {
+  const m = imp.mapa, val = (f, id) => m[id] >= 0 ? String(f[m[id]] == null ? '' : f[m[id]]).trim() : '';
+  // Copias de trabajo de los clientes actuales, encontrables por CUIT, documento o nombre (en cualquier orden)
+  const porCuit = {}, porDoc = {}, porClave = {}, existentes = [], nuevos = [];
+  const anotar = w => { if (w.cuit) porCuit[w.cuit] = w; if (w.documento) porDoc[w.documento] = w; porClave[DS.claveNombre(w.nombre)] = w; };
+  cli.lista.forEach(c => { const w = { ...c, _visto: false, _cambio: false }; existentes.push(w); anotar(w); });
+  imp.filas.forEach(f => {
+    const nombre = val(f, 'nombre').replace(/\s+/g, ' ').toUpperCase();
+    if (!nombre) return;
+    const tel = val(f, 'telefono'), cel = DS.celular10(tel), prod = val(f, 'productor');
+    const dato = { nombre, documento: DS.soloDigitos(val(f, 'documento')), cuit: DS.soloDigitos(val(f, 'cuit')), whatsapp: cel, telefono: cel ? '' : tel,
+      mail: val(f, 'mail').toLowerCase(), direccion: val(f, 'direccion').replace(/N¿/g, 'N°'), localidad: val(f, 'localidad'),
+      nacimiento: m.nacimiento >= 0 ? IMP.fecha(f[m.nacimiento]) : null, productor: COBRADORES[prod] || prod, notas: '' };
+    let w = (dato.cuit && porCuit[dato.cuit]) || (dato.documento && porDoc[dato.documento]) || porClave[DS.claveNombre(nombre)];
+    if (!w) { w = { ...dato, id: '', alta: fechaISO(new Date()) }; nuevos.push(w); }
+    else {
+      // Solo se completan los datos vacíos: lo que ya estaba cargado no se pisa
+      w._visto = true;
+      ['documento', 'cuit', 'whatsapp', 'telefono', 'mail', 'direccion', 'localidad', 'nacimiento', 'productor'].forEach(k => { if (!w[k] && dato[k]) { w[k] = dato[k]; w._cambio = true; } });
+    }
+    anotar(w);
+  });
+  const completados = existentes.filter(w => w._cambio), iguales = existentes.filter(w => w._visto && !w._cambio);
+  // Celulares que quedarían repetidos en muchos clientes (suelen ser de la oficina o de un productor)
+  const uso = {}; existentes.concat(nuevos).forEach(c => { if (c.whatsapp) uso[c.whatsapp] = (uso[c.whatsapp] || 0) + 1; });
+  const compartidos = nuevos.concat(completados).filter(c => c.whatsapp && uso[c.whatsapp] >= DS.TEL_COMPARTIDO).length;
+  return { nuevos, completados, iguales, compartidos };
+}
+
+function vistaPrevia() {
+  const l = impListas = armar(), falta = imp.mapa.nombre < 0;
+  $('imp-resumen').innerHTML = falta ? '<span class="mal">Elegí qué columna tiene el nombre</span>' : `
+    <span class="ok">${l.nuevos.length} nuevos</span>
+    ${l.completados.length ? `<span class="info">${l.completados.length} ya existían y se les completan datos</span>` : ''}
+    ${l.iguales.length ? `<span>${l.iguales.length} ya existían, sin cambios</span>` : ''}
+    ${l.compartidos ? `<span class="mal">${l.compartidos} con un celular que se repite en ${DS.TEL_COMPARTIDO} o más clientes</span>` : ''}`;
+  const fila = (c, e) => `<tr><td>${e}</td><td><strong>${esc(c.nombre)}</strong></td><td>${esc(c.documento) || '—'}</td><td>${esc(c.whatsapp) || '—'}</td><td>${esc(c.telefono) || '—'}</td><td>${esc(c.mail) || '—'}</td><td>${fechaNac(c.nacimiento) || '—'}</td></tr>`;
+  $('imp-tbody').innerHTML = l.nuevos.slice(0, 60).map(c => fila(c, 'Nuevo')).join('') + l.completados.slice(0, 30).map(c => fila(c, 'Se completa')).join('');
+  const total = l.nuevos.length + l.completados.length;
+  $('imp-cargar').disabled = falta || !total;
+  $('imp-cargar').textContent = total && !falta ? `Importar ${total} ${total === 1 ? 'cliente' : 'clientes'}` : 'Importar';
+}
+
+async function importar() {
+  const l = impListas; if (!l) return;
+  $('imp-cargar').disabled = true; $('imp-cargar').textContent = 'Importando...';
+  try {
+    const r = await DS.post({ action: 'importar_clientes', clientes: l.nuevos.concat(l.completados).map(DS.clienteAFila) });
+    cerrar('modal-importar'); toast(`Listo: ${r.nuevas} nuevos y ${r.actualizadas} completados`); await cargarDatos();
+  } catch (e) { toast('No se pudo importar: ' + e.message, true); $('imp-cargar').disabled = false; $('imp-cargar').textContent = 'Reintentar'; }
+}
+
+const zona = $('imp-zona');
+['dragover', 'dragenter'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('sobre'); }));
+['dragleave', 'drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('sobre'); }));
+zona.addEventListener('drop', e => leerArchivo(e.dataTransfer.files[0]));
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open')); });
+
+render();
+cargarDatos();
+</script>
+</body>
+</html>

@@ -170,6 +170,7 @@ const DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 const ETIQ = { enviar: 'Para enviar', enviada: 'Enviada', vencida: 'Vencida sin enviar', futura: 'Todavía falta' };
 
 let ren = { polizas: [], estados: {}, sinId: 0 };
+let cli = null;     // clientes: de ahí sale el WhatsApp cuando la póliza no lo trae
 let vista = { y: hoy.getFullYear(), m: hoy.getMonth() };
 let diaSel = hoy.getDate();
 let panelModo = ({ '#enviar': 'enviar', '#vencidas': 'vencidas' })[location.hash] || 'dia';
@@ -179,7 +180,8 @@ const $ = id => document.getElementById(id);
 async function cargarDatos() {
   $('last-update').textContent = 'Cargando datos...';
   try {
-    let [pol, est] = await Promise.all([DS.hoja('Vencimientos'), DS.hojaOpcional('RenovacionesEstado')]);
+    let [pol, est, clientes] = await Promise.all([DS.hoja('Vencimientos'), DS.hojaOpcional('RenovacionesEstado'), DS.hojaOpcional('Clientes')]);
+    cli = DS.leerClientes(clientes || []);
     ren = DS.leerRenovaciones(pol, est);
     if (ren.sinId) {                       // pólizas cargadas a mano en el Sheets: se les asigna el ID y se vuelve a leer
       await DS.post({ action: 'asignar_ids_venc' });
@@ -291,7 +293,7 @@ function mensaje(o) {
 }
 
 function itemHTML(o) {
-  const p = o.p, link = DS.wppLink(p.whatsapp, mensaje(o));
+  const p = o.p, link = DS.wppLink(DS.whatsappDe(cli, p.cliente, p.whatsapp), mensaje(o));
   const dias = diasEntre(hoy, o.fecha);
   const cuando = dias === 0 ? 'Vence hoy' : dias > 0 ? `Vence el ${fechaCorta(o.fecha)} · en ${dias} ${dias === 1 ? 'día' : 'días'}` : `Venció el ${fechaCorta(o.fecha)} · hace ${-dias} ${dias === -1 ? 'día' : 'días'}`;
   const args = `'${esc(p.id)}','${o.clave}'`;
@@ -341,7 +343,7 @@ function renderPolizas() {
       <td>${esc(p.compania) || '—'}</td><td>${esc(p.riesgo) || '—'}</td><td class="mono">${esc(p.poliza) || '—'}</td>
       <td>${esc(p.vigencia) || 'No se repite'}</td>
       <td class="mono">${prox ? p2(prox.getDate()) + '/' + p2(prox.getMonth() + 1) + '/' + prox.getFullYear() : '<span style="color:var(--danger)">Falta la fecha</span>'}</td>
-      <td class="mono">${esc(p.whatsapp) || '—'}</td>
+      <td class="mono">${esc(DS.whatsappDe(cli, p.cliente, p.whatsapp)) || '—'}</td>
       <td><div class="row-actions">
         <button class="btn sm" onclick="abrirPoliza('${esc(p.id)}')">Editar</button>
         <button class="btn sm" onclick="pausarPoliza('${esc(p.id)}')">${p.activo ? 'Dar de baja' : 'Reactivar'}</button>

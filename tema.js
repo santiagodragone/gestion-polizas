@@ -5,7 +5,41 @@
    3. expone temaColor() para que los gráficos usen los colores del tema. */
 (function () {
   var CLAVE = 'dragone-tema';
-  var SESION = 'sd_auth';
+  var SESION = 'sd_sesion';
+
+  // ── Sesión ──
+  // El inicio guarda acá el pase que entrega la planilla al validar la clave. Sin pase vigente,
+  // cualquier pantalla vuelve al inicio, y todos los pedidos a la planilla lo llevan adjunto.
+  function sesion() {
+    try { var s = JSON.parse(localStorage.getItem(SESION) || 'null'); return s && s.vence > Date.now() ? s : null; } catch (e) { return null; }
+  }
+  function cerrarSesion() {
+    try { localStorage.removeItem(SESION); } catch (e) {}
+    if (esInicio) location.reload(); else location.replace('index.html');
+  }
+  var esInicio = /(^|\/)(index\.html)?$/i.test(location.pathname);
+  if (!esInicio && !sesion()) location.replace('index.html');
+
+  var pedir = window.fetch;
+  window.fetch = function (url, opciones) {
+    var u = typeof url === 'string' ? url : (url && url.url) || '';
+    if (u.indexOf('script.google.com/macros/') < 0) return pedir.apply(this, arguments);
+    var s = sesion(), pase = s ? s.token : '';
+    opciones = opciones || {};
+    if (String(opciones.method || 'GET').toUpperCase() === 'POST') {
+      try {
+        var d = JSON.parse(opciones.body);
+        if (d && d.action !== 'login' && !d.token) { d.token = pase; opciones = Object.assign({}, opciones, { body: JSON.stringify(d) }); }
+      } catch (e) {}
+    } else if (pase && u.indexOf('token=') < 0) url = u + (u.indexOf('?') < 0 ? '?' : '&') + 'token=' + encodeURIComponent(pase);
+    return pedir.call(this, url, opciones).then(function (r) {
+      // Si la planilla dice que el pase ya no vale (venció o se cambió la clave), se vuelve a pedir la clave
+      r.clone().json().then(function (j) { if (j && j.error === 'sesion' && s) cerrarSesion(); }).catch(function () {});
+      return r;
+    });
+  };
+  window.temaSesion = { leer: sesion, cerrar: cerrarSesion,
+    guardar: function (token, horas) { try { localStorage.setItem(SESION, JSON.stringify({ token: token || '', vence: Date.now() + horas * 3600000 - 60000 })); } catch (e) {} } };
   var usado = false;
 
   function ic(d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; }
@@ -20,6 +54,7 @@
     { href: 'index.html', nombre: 'Inicio', icono: ic('<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/>') },
     { href: 'tareas.html', nombre: 'Tareas', icono: ic('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16 9.5"/>') },
     { grupo: 'Gestión' },
+    { href: 'clientes.html', nombre: 'Clientes', icono: ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>') },
     { href: 'gestion_polizas.html', nombre: 'Cobranza', icono: ic('<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19M6.5 15h4"/>') },
     { href: 'renovaciones.html', nombre: 'Renovaciones', icono: ic('<path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/>') },
     { href: 'siniestros.html', nombre: 'Siniestros', icono: ic('<path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M6.5 17v2M17.5 17v2M7 14h.01M17 14h.01"/>') },
@@ -86,8 +121,7 @@
       else if (usado) location.reload();
     });
     nav.querySelector('#nav-salir').addEventListener('click', function () {
-      try { localStorage.removeItem(SESION); } catch (e) {}
-      location.href = 'index.html';
+      cerrarSesion();
     });
   }
 

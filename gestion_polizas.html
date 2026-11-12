@@ -201,6 +201,7 @@
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
+<script src="datos.js"></script>
 </head>
 <body>
 
@@ -363,7 +364,8 @@ const DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
 let cupones = [];      // {id, cliente, whatsapp, compania, poliza, ramo, dia, activo, notas, alta}
 let estados = {};      // 'id|2026-11' -> {aviso, fechaAviso, pagado, fechaPago}
-let reportes = [];     // {periodo, compania, emitida, cobrada, notas}
+let reportes = [];
+let cli = null;        // clientes: de ahí sale el WhatsApp cuando el cupón no lo trae     // {periodo, compania, emitida, cobrada, notas}
 let editId = null;
 let charts = [];
 
@@ -453,6 +455,7 @@ async function cargarDatos() {
       periodo: normPeriodo(o['Periodo']), compania: String(o['Compañía']),
       emitida: parseMonto(o['Emitida']), cobrada: parseMonto(o['Cobrada']), notas: String(o['Notas'])
     })).filter(x => x.periodo);
+    cli = DS.leerClientes(await DS.hojaOpcional('Clientes') || []);
     $('aviso-setup').innerHTML = '';
     $('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
   } catch (err) {
@@ -598,7 +601,7 @@ function mensaje(o) {
 }
 
 function itemHTML(o) {
-  const c = o.c, num = wppNumero(c.whatsapp);
+  const c = o.c, num = wppNumero(DS.whatsappDe(cli, c.cliente, c.whatsapp));
   const link = num ? 'https://wa.me/' + num + '?text=' + encodeURIComponent(mensaje(o)) : '#';
   const meta = [c.compania, c.poliza, c.ramo].filter(Boolean).map(esc).join(' · ');
   const cuando = panelModo === 'dia' ? '' : `Vence el ${p2(o.dia)}/${p2(o.fecha.getMonth() + 1)} · `;

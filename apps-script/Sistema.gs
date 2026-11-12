@@ -13,8 +13,15 @@
 var SIS_HOJAS = {
   venc:   { nombre: 'Vencimientos',       cols: ['ID', 'Cliente', 'WhatsApp', 'Compañía', 'Póliza', 'Riesgo', 'Vencimiento', 'Vigencia', 'Activo', 'Notas'] },
   estado: { nombre: 'RenovacionesEstado', cols: ['Clave', 'ID', 'Fecha', 'Enviada', 'FechaEnvio'] },
-  tareas: { nombre: 'Pendientes',         cols: ['ID', 'Título', 'Responsable', 'Fecha', 'Repite', 'Estado', 'FechaHecha', 'Importante', 'Notas', 'Creada'] }
+  tareas: { nombre: 'Pendientes',         cols: ['ID', 'Título', 'Responsable', 'Fecha', 'Repite', 'Estado', 'FechaHecha', 'Importante', 'Notas', 'Creada'] },
+  clientes: { nombre: 'Clientes',         cols: ['ID', 'Nombre', 'Documento', 'CUIT', 'WhatsApp', 'Teléfono', 'Mail', 'Dirección', 'Localidad', 'Nacimiento', 'Productor', 'Notas', 'Alta'] }
 };
+
+function sisFilaCliente_(c, id) {
+  return [id, String(c.nombre), String(c.documento || ''), String(c.cuit || ''), String(c.whatsapp || ''), String(c.telefono || ''),
+    String(c.mail || ''), String(c.direccion || ''), String(c.localidad || ''), String(c.nacimiento || ''), String(c.productor || ''),
+    String(c.notas || ''), String(c.alta || '')];
+}
 var SIS_VIGENCIAS = ['Mensual', 'Bimestral', 'Trimestral', 'Cuatrimestral', 'Semestral', 'Anual'];
 
 function sisHoja_(def) {
@@ -74,7 +81,8 @@ function sisAsignarIds_() {
 function sistemaPost_(e) {
   var data;
   try { data = JSON.parse(e.postData.contents); } catch (err) { return null; }
-  var acciones = ['asignar_ids_venc', 'guardar_venc', 'importar_venc', 'estado_venc', 'guardar_tarea', 'eliminar_tarea'];
+  var acciones = ['asignar_ids_venc', 'guardar_venc', 'importar_venc', 'estado_venc', 'guardar_tarea', 'eliminar_tarea',
+                  'guardar_cliente', 'eliminar_cliente', 'importar_clientes'];
   if (!data || acciones.indexOf(data.action) === -1) return null;
 
   var lock = LockService.getScriptLock();
@@ -128,6 +136,32 @@ function sistemaPost_(e) {
     }
 
     if (data.action === 'eliminar_tarea') { sisBorrar_(sisHoja_(SIS_HOJAS.tareas), data.id); return sisJson_({ ok: true }); }
+
+    if (data.action === 'guardar_cliente') {
+      var c = data.cliente || {};
+      if (!c.id || !c.nombre) return sisJson_({ ok: false, error: 'Falta el nombre del cliente' });
+      sisUpsert_(sisHoja_(SIS_HOJAS.clientes), c.id, sisFilaCliente_(c, String(c.id)));
+      return sisJson_({ ok: true });
+    }
+
+    if (data.action === 'eliminar_cliente') { sisBorrar_(sisHoja_(SIS_HOJAS.clientes), data.id); return sisJson_({ ok: true }); }
+
+    if (data.action === 'importar_clientes') {
+      // Carga masiva: actualiza los clientes que traen un ID existente y agrega el resto de una sola vez
+      var shC = sisHoja_(SIS_HOJAS.clientes), listaC = data.clientes || [];
+      var nC = shC.getLastRow(), filaC = {};
+      if (nC >= 2) { var idsC = shC.getRange(2, 1, nC - 1, 1).getValues(); for (var iC = 0; iC < idsC.length; iC++) filaC[String(idsC[iC][0])] = iC + 2; }
+      var altas = [], cambios = 0, baseC = new Date().getTime();
+      listaC.forEach(function (q, k) {
+        if (!q.nombre) return;
+        var existe = q.id && filaC[String(q.id)];
+        var fila = sisFilaCliente_(q, existe ? String(q.id) : 'CLI' + baseC + '_' + k);
+        if (existe) { shC.getRange(existe, 1, 1, fila.length).setValues([fila]); cambios++; }
+        else altas.push(fila);
+      });
+      if (altas.length) shC.getRange(shC.getLastRow() + 1, 1, altas.length, altas[0].length).setValues(altas);
+      return sisJson_({ ok: true, nuevas: altas.length, actualizadas: cambios });
+    }
   } catch (err) {
     return sisJson_({ ok: false, error: String(err) });
   } finally {

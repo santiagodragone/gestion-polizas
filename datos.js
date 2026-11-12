@@ -76,7 +76,8 @@
       est[String(o['ID']) + '|' + per] = { aviso: esSi(o['Aviso']), pagado: esSi(o['Pagado']) };
     });
     var cup = (cupones || []).filter(function (o) { return String(o['ID']).trim() !== ''; }).map(function (o) {
-      return { id: String(o['ID']), cliente: String(o['Cliente']), dia: Math.max(1, Math.min(31, parseInt(o['Día'], 10) || 1)),
+      return { id: String(o['ID']), cliente: String(o['Cliente']), whatsapp: String(o['WhatsApp'] || '').trim(), compania: String(o['Compañía'] || '').trim(),
+               poliza: String(o['Póliza'] || '').trim(), ramo: String(o['Ramo'] || '').trim(), dia: Math.max(1, Math.min(31, parseInt(o['Día'], 10) || 1)),
                activo: String(o['Activo']).trim() === '' ? true : esSi(o['Activo']), alta: parseFecha(o['Alta']) };
     });
     return { cupones: cup, estados: est };
@@ -150,6 +151,84 @@
     return out.sort(function (a, b) { return a.fecha - b.fecha; });
   }
 
+  // ── Clientes ─────────────────────────────────────────────────────────────
+  // Un cliente se identifica por CUIT o documento; si no hay, por el nombre sin importar el orden
+  // ("García Juan" y "Juan García" son la misma persona).
+  var TEL_COMPARTIDO = 3;      // un celular que figura en 3 o más clientes se considera de oficina o productor
+
+  function soloDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
+  function claveNombre(n) { return norm(n).replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' '); }
+  // Deja un celular como código de área + número (10 dígitos). Devuelve '' si es un fijo o no se entiende.
+  function celular10(v) {
+    var t = String(v == null ? '' : v).trim(), d = soloDigitos(t).replace(/^0+/, '');
+    if (!d) return '';
+    if (d.indexOf('549') === 0 && d.length === 13) return d.slice(3);
+    if (d.indexOf('54') === 0 && d.length === 12) d = d.slice(2);
+    if (d.length === 12) for (var k = 2; k <= 4; k++) if (d.slice(k, k + 2) === '15') return d.slice(0, k) + d.slice(k + 2);
+    if (d.length !== 10) return '';
+    if (/[-\s]/.test(t) && !/15/.test(t)) return '';                 // "011-4734-0285": fijo
+    if (d.indexOf('11') === 0 && d.charAt(2) === '4') return '';       // 11 4xxx-xxxx: fijo de CABA y GBA
+    return d;
+  }
+  function indexarClientes(lista) {
+    var porClave = {}, porCuit = {}, porDoc = {}, uso = {};
+    lista.forEach(function (c) {
+      c.clave = claveNombre(c.nombre);
+      (porClave[c.clave] = porClave[c.clave] || []).push(c);
+      if (c.cuit) porCuit[c.cuit] = c;
+      if (c.documento) porDoc[c.documento] = c;
+      if (c.whatsapp) uso[c.whatsapp] = (uso[c.whatsapp] || 0) + 1;
+    });
+    lista.forEach(function (c) { c.compartido = c.whatsapp ? uso[c.whatsapp] : 0; });
+    return { lista: lista, porClave: porClave, porCuit: porCuit, porDoc: porDoc };
+  }
+  function leerClientes(filas) {
+    return indexarClientes((filas || []).filter(function (o) { return String(o['ID']).trim() !== '' && String(o['Nombre']).trim() !== ''; }).map(function (o) {
+      return { id: String(o['ID']), nombre: String(o['Nombre']).trim(), documento: soloDigitos(o['Documento']), cuit: soloDigitos(o['CUIT']),
+               whatsapp: soloDigitos(o['WhatsApp']), telefono: String(o['Teléfono']).trim(), mail: String(o['Mail']).trim(),
+               direccion: String(o['Dirección']).trim(), localidad: String(o['Localidad']).trim(), nacimiento: parseFecha(o['Nacimiento']),
+               productor: String(o['Productor']).trim(), notas: String(o['Notas']).trim(), alta: String(o['Alta']).slice(0, 10) };
+    }));
+  }
+  function clienteAFila(c) {
+    return { id: c.id, nombre: c.nombre, documento: c.documento || '', cuit: c.cuit || '', whatsapp: c.whatsapp || '', telefono: c.telefono || '',
+             mail: c.mail || '', direccion: c.direccion || '', localidad: c.localidad || '', nacimiento: c.nacimiento ? fechaISO(c.nacimiento) : '',
+             productor: c.productor || '', notas: c.notas || '', alta: c.alta || fechaISO(new Date()) };
+  }
+  // El cliente al que pertenece un nombre tal como viene en una póliza. Las compañías cortan los nombres
+  // largos a 30 letras, así que también vale si uno es el comienzo del otro.
+  function clienteDe(cli, nombre) {
+    if (!cli || !nombre) return null;
+    var l = cli.porClave[claveNombre(nombre)];
+    if (l) return l[0];
+    var n = norm(nombre).replace(/\s+/g, ' ');
+    if (n.length < 28) return null;
+    for (var i = 0; i < cli.lista.length; i++) {
+      var m = norm(cli.lista[i].nombre).replace(/\s+/g, ' ');
+      if (m.length >= 28 && (n.indexOf(m) === 0 || m.indexOf(n) === 0)) return cli.lista[i];
+    }
+    return null;
+  }
+  // El WhatsApp para escribirle a alguien: el de la póliza si lo tiene; si no, el de su ficha de cliente
+  // (salvo que ese número figure en muchos clientes: ahí no se usa solo, para no escribirle a otra persona).
+  function whatsappDe(cli, nombre, propio) {
+    if (String(propio || '').trim()) return String(propio).trim();
+    var c = clienteDe(cli, nombre);
+    return c && c.whatsapp && c.compartido < TEL_COMPARTIDO ? c.whatsapp : '';
+  }
+  // Próximo cumpleaños de un cliente y cuántos días faltan (0 = hoy).
+  function proximoCumple(c) {
+    if (!c.nacimiento) return null;
+    var m = c.nacimiento.getMonth(), d = c.nacimiento.getDate(), y = hoy.getFullYear();
+    var f = new Date(y, m, Math.min(d, diasDelMes(y, m)));
+    if (f < hoy) f = new Date(y + 1, m, Math.min(d, diasDelMes(y + 1, m)));
+    return { fecha: f, faltan: diasEntre(hoy, f), cumple: f.getFullYear() - c.nacimiento.getFullYear() };
+  }
+  function cumpleanos(cli, dias) {
+    return cli.lista.map(function (c) { var p = proximoCumple(c); return p && p.faltan <= dias ? { c: c, fecha: p.fecha, faltan: p.faltan, cumple: p.cumple } : null; })
+      .filter(Boolean).sort(function (a, b) { return a.faltan - b.faltan; });
+  }
+
   // ── Tareas ───────────────────────────────────────────────────────────────
   var EQUIPO = ['Santiago', 'Bruno', 'Leo', 'Roberto'];
   var REPITE = ['No', 'Todos los días', 'Todas las semanas', 'Todos los meses'];
@@ -205,6 +284,8 @@
     hoja: hoja, hojaOpcional: hojaOpcional, post: post,
     leerCobranza: leerCobranza, cobranzaHoy: cobranzaHoy,
     leerRenovaciones: leerRenovaciones, renovacionesDelMes: renovacionesDelMes, renovacionesParaEnviar: renovacionesParaEnviar,
+    TEL_COMPARTIDO: TEL_COMPARTIDO, soloDigitos: soloDigitos, claveNombre: claveNombre, celular10: celular10, leerClientes: leerClientes,
+    indexarClientes: indexarClientes, clienteAFila: clienteAFila, clienteDe: clienteDe, whatsappDe: whatsappDe, proximoCumple: proximoCumple, cumpleanos: cumpleanos,
     leerTareas: leerTareas, tareaAFila: tareaAFila, completar: completar, grupoDe: grupoDe, hechaHoy: hechaHoy
   };
 })();
