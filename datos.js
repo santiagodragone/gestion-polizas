@@ -156,6 +156,24 @@
   // ("García Juan" y "Juan García" son la misma persona).
   var TEL_COMPARTIDO = 3;      // un celular que figura en 3 o más clientes se considera de oficina o productor
 
+  // ── Productores ──
+  // Un solo nombre por productor, venga como código de cobrador, apellido suelto o nombre completo.
+  // Santiago y Roberto Dragone se liquidan juntos como "Seguros Dragone".
+  var PROPIO = 'Seguros Dragone';
+  var COD_PRODUCTOR = { '0': PROPIO, '9': PROPIO, '4': 'Emiliano Bartolomeo', '5': 'Evelin Chain', '7': 'Leonardo Bonilla', '22': 'Bruno Masnatta', '66': 'Marcelo Haikel' };
+  var APELLIDO_PRODUCTOR = { dragone: PROPIO, roberto: PROPIO, rober: PROPIO, santiago: PROPIO, santi: PROPIO, bartolomeo: 'Emiliano Bartolomeo', chain: 'Evelin Chain',
+                             bonilla: 'Leonardo Bonilla', masnatta: 'Bruno Masnatta', haikel: 'Marcelo Haikel' };
+  var PRODUCTORES = [PROPIO, 'Emiliano Bartolomeo', 'Evelin Chain', 'Marcelo Haikel', 'Leonardo Bonilla', 'Bruno Masnatta'];
+  function productor(v) {
+    var s = String(v == null ? '' : v).trim();
+    if (!s) return '';
+    if (COD_PRODUCTOR[s]) return COD_PRODUCTOR[s];
+    if (/^\d+$/.test(s)) return 'Cód. ' + s;
+    var palabras = norm(s).split(/\s+/);
+    for (var i = 0; i < palabras.length; i++) if (APELLIDO_PRODUCTOR[palabras[i]]) return APELLIDO_PRODUCTOR[palabras[i]];
+    return s.split(/\s+/).map(function (p) { return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }).join(' ');
+  }
+
   function soloDigitos(v) { return String(v == null ? '' : v).replace(/\D/g, ''); }
   function claveNombre(n) { return norm(n).replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' '); }
   // Deja un celular como código de área + número (10 dígitos). Devuelve '' si es un fijo o no se entiende.
@@ -187,7 +205,7 @@
       return { id: String(o['ID']), nombre: String(o['Nombre']).trim(), documento: soloDigitos(o['Documento']), cuit: soloDigitos(o['CUIT']),
                whatsapp: soloDigitos(o['WhatsApp']), telefono: String(o['Teléfono']).trim(), mail: String(o['Mail']).trim(),
                direccion: String(o['Dirección']).trim(), localidad: String(o['Localidad']).trim(), nacimiento: parseFecha(o['Nacimiento']),
-               productor: String(o['Productor']).trim(), notas: String(o['Notas']).trim(), alta: String(o['Alta']).slice(0, 10) };
+               productor: productor(o['Productor']), notas: String(o['Notas']).trim(), alta: String(o['Alta']).slice(0, 10) };
     }));
   }
   function clienteAFila(c) {
@@ -284,6 +302,7 @@
     hoja: hoja, hojaOpcional: hojaOpcional, post: post,
     leerCobranza: leerCobranza, cobranzaHoy: cobranzaHoy,
     leerRenovaciones: leerRenovaciones, renovacionesDelMes: renovacionesDelMes, renovacionesParaEnviar: renovacionesParaEnviar,
+    PROPIO: PROPIO, PRODUCTORES: PRODUCTORES, productor: productor,
     TEL_COMPARTIDO: TEL_COMPARTIDO, soloDigitos: soloDigitos, claveNombre: claveNombre, celular10: celular10, leerClientes: leerClientes,
     indexarClientes: indexarClientes, clienteAFila: clienteAFila, clienteDe: clienteDe, whatsappDe: whatsappDe, proximoCumple: proximoCumple, cumpleanos: cumpleanos,
     leerTareas: leerTareas, tareaAFila: tareaAFila, completar: completar, grupoDe: grupoDe, hechaHoy: hechaHoy

@@ -14,6 +14,10 @@
   .tag.ramo{background:var(--accent-soft);color:var(--accent);}
   .tag.aviso{background:var(--warn-soft);color:var(--warn);}
   .tag.hoy{background:var(--ok-soft);color:var(--ok);}
+  .prods{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 1rem;}
+  .prod{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .12s,box-shadow .12s;}
+  .prod:hover{border-color:var(--text-2);} .prod small{color:var(--text-2);font-weight:500;margin-left:6px;}
+  .prod.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   .sub{font-size:12px;color:var(--text-2);margin-top:2px;}
   tbody tr.fila{cursor:pointer;} tbody tr.fila:hover td{background:var(--surface-2);}
   .ficha-polizas{margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line);}
@@ -55,6 +59,7 @@
     <button class="btn primary" onclick="abrirFicha()">+ Nuevo cliente</button>
   </div>
 
+  <div class="prods" id="prods" role="group" aria-label="Productor"></div>
   <div class="metrics-row" id="metricas"></div>
   <div class="table-wrap" id="lista"></div>
 </div>
@@ -113,14 +118,13 @@
 <script>
 const { hoy, MESES, esc, norm, p2, fechaISO, fechaCorta, toast } = DS;
 const $ = id => document.getElementById(id);
-// Códigos de cobrador que usan los listados de Federación Patronal
-const COBRADORES = { '0': 'Roberto', '4': 'Emiliano Bartolomeo', '5': 'Evelin Chain', '7': 'Leonardo Bonilla', '9': 'Santiago', '22': 'Bruno Masnatta', '66': 'Marcelo Haikel' };
 const SALUDO = '¡Feliz cumpleaños! Desde Seguros Dragone te deseamos un muy buen día.';
 
 let cli = DS.indexarClientes([]), ren = { polizas: [], estados: {} }, cob = { cupones: [], estados: {} };
 let polizasDe = {};      // id de cliente -> pólizas y cupones que tiene
 let sueltos = [];        // personas con pólizas que todavía no están en Clientes
 let editId = null;
+let filtroProd = null;   // null = todos; '' = sin productor; o el nombre del productor
 
 async function cargarDatos() {
   try {
@@ -166,7 +170,12 @@ function duplicados() {
 function render() {
   cruzar();
   const q = norm($('busq').value), f = $('filtro').value, cumples = DS.cumpleanos(cli, 30);
-  $('dl-prod').innerHTML = [...new Set([...Object.values(COBRADORES), ...cli.lista.map(c => c.productor).filter(Boolean)])].map(v => `<option value="${esc(v)}">`).join('');
+  const prods = [...new Set([...DS.PRODUCTORES, ...cli.lista.map(c => c.productor).filter(Boolean)])];
+  $('dl-prod').innerHTML = prods.map(v => `<option value="${esc(v)}">`).join('');
+  // Un clic muestra todos los clientes de ese productor
+  const cuantos = p => cli.lista.filter(c => c.productor === p).length;
+  $('prods').innerHTML = cli.lista.length ? [[null, 'Todos', cli.lista.length]].concat(prods.map(p => [p, p, cuantos(p)]).filter(x => x[2]), [['', 'Sin productor', cuantos('')]].filter(x => x[2]))
+    .map(([v, n, k]) => `<button class="prod${filtroProd === v ? ' active' : ''}" aria-pressed="${filtroProd === v}" onclick="filtroProd=${v === null ? 'null' : "'" + esc(v) + "'"};render()">${esc(n)}<small>${k}</small></button>`).join('') : '';
   const sinWpp = cli.lista.filter(c => !c.whatsapp).length, comp = cli.lista.filter(c => c.compartido >= DS.TEL_COMPARTIDO).length;
   $('metricas').innerHTML = `
     <div class="metric"><div class="metric-val c-gold">${cli.lista.length}</div><div class="metric-lbl">Clientes</div></div>
@@ -177,7 +186,7 @@ function render() {
     <button class="btn sm" style="margin-left:.6rem" onclick="agregarSueltos(this)">Agregarlas</button></div>` : '';
 
   if (f === 'duplicados') { renderDuplicados(); return; }
-  let lista = cli.lista.filter(c => !q || norm([c.nombre, c.documento, c.cuit, c.whatsapp, c.telefono, c.mail].join(' ')).includes(q));
+  let lista = cli.lista.filter(c => filtroProd === null || c.productor === filtroProd).filter(c => !q || norm([c.nombre, c.documento, c.cuit, c.whatsapp, c.telefono, c.mail].join(' ')).includes(q));
   if (f === 'sinwpp') lista = lista.filter(c => !c.whatsapp);
   if (f === 'compartido') lista = lista.filter(c => c.compartido >= DS.TEL_COMPARTIDO).sort((a, b) => a.whatsapp.localeCompare(b.whatsapp));
   else if (f === 'cumples') { const ids = new Map(cumples.map(x => [x.c.id, x])); lista = lista.filter(c => ids.has(c.id)).sort((a, b) => ids.get(a.id).faltan - ids.get(b.id).faltan); }
@@ -254,7 +263,7 @@ async function guardarFicha() {
   const previo = editId ? cli.lista.find(x => x.id === editId) : null;
   const c = { id: previo ? previo.id : DS.nuevoId('CLI'), nombre, documento: DS.soloDigitos($('f-doc').value), cuit: DS.soloDigitos($('f-cuit').value),
     whatsapp: DS.celular10($('f-wpp').value) || DS.soloDigitos($('f-wpp').value), telefono: $('f-tel').value.trim(), mail: $('f-mail').value.trim(),
-    direccion: $('f-dir').value.trim(), localidad: $('f-loc').value.trim(), nacimiento: DS.parseFecha($('f-nac').value), productor: $('f-prod').value.trim(),
+    direccion: $('f-dir').value.trim(), localidad: $('f-loc').value.trim(), nacimiento: DS.parseFecha($('f-nac').value), productor: DS.productor($('f-prod').value),
     notas: $('f-notas').value.trim(), alta: previo ? previo.alta : fechaISO(new Date()) };
   if (!previo) {                                     // norma: no duplicar clientes
     const otro = (c.cuit && cli.porCuit[c.cuit]) || (c.documento && cli.porDoc[c.documento]) || (cli.porClave[DS.claveNombre(nombre)] || [])[0];
@@ -322,7 +331,7 @@ function armar() {
     const tel = val(f, 'telefono'), cel = DS.celular10(tel), prod = val(f, 'productor');
     const dato = { nombre, documento: DS.soloDigitos(val(f, 'documento')), cuit: DS.soloDigitos(val(f, 'cuit')), whatsapp: cel, telefono: cel ? '' : tel,
       mail: val(f, 'mail').toLowerCase(), direccion: val(f, 'direccion').replace(/N¿/g, 'N°'), localidad: val(f, 'localidad'),
-      nacimiento: m.nacimiento >= 0 ? IMP.fecha(f[m.nacimiento]) : null, productor: COBRADORES[prod] || prod, notas: '' };
+      nacimiento: m.nacimiento >= 0 ? IMP.fecha(f[m.nacimiento]) : null, productor: DS.productor(prod), notas: '' };
     let w = (dato.cuit && porCuit[dato.cuit]) || (dato.documento && porDoc[dato.documento]) || porClave[DS.claveNombre(nombre)];
     if (!w) { w = { ...dato, id: '', alta: fechaISO(new Date()) }; nuevos.push(w); }
     else {

@@ -208,6 +208,7 @@
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
+<script src="datos.js"></script>
 </head>
 <body>
 
@@ -279,27 +280,18 @@
 <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFydbgOT0KDGjMaiE8UrJF7LCVZH3hZzwCAO4QriMnDMjfRB5PVYzqSZMlDFwv8rt8/exec";
 
-  // Mapa código → nombre
-  const COD_A_NOMBRE = {
-    '0':  'Roberto',
-    '4':  'Emiliano Bartolomeo',
-    '5':  'Evelin Chain',
-    '7':  'Leonardo Bonilla',
-    '9':  'Santiago',
-    '22': 'Bruno Masnatta',
-    '66': 'Marcelo Haikel',
-  };
-
-  // Colores por nombre normalizado
+  // Los nombres de productor salen de datos.js (DS.productor): un solo nombre por productor,
+  // y Santiago y Roberto Dragone juntos como "Seguros Dragone".
   const NOMBRE_A_COLOR = {
-    'roberto':             temaColor('--accent'),
+    'seguros dragone':     temaColor('--accent'),
     'emiliano bartolomeo': temaColor('--info'),
     'evelin chain':        '#f78fb3',
     'leonardo bonilla':    '#a8e6cf',
-    'santiago':            temaColor('--warn'),
     'bruno masnatta':      '#b39ddb',
     'marcelo haikel':      '#80cbc4',
+    'sin asignar':         temaColor('--danger'),
   };
+  let cli = null;          // clientes: de su ficha sale el productor de cada comisión
 
   const MESES_ORDEN = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
@@ -357,16 +349,36 @@
     return parseFloat(s) || 0;
   }
 
-  // ── RESOLVER NOMBRE DE COBRADOR (código número O texto libre) ──────────────
-  function resolverCobrador(raw) {
-    const s = String(raw || '').trim();
-    if (!s) return 'Sin asignar';
-    // Si está en el mapa de códigos → usar nombre
-    if (COD_A_NOMBRE[s]) return COD_A_NOMBRE[s];
-    // Si es número pero no está en el mapa
-    if (/^\d+$/.test(s)) return 'Cód. ' + s;
-    // Es texto libre (ej: "Garcia") → devolver tal cual con primera letra mayúscula
-    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  // ── A QUIÉN LE CORRESPONDE CADA COMISIÓN ──────────────────────────────────
+  // 1. Si la fila trae cobrador cargado en la planilla, vale ese.
+  // 2. Si no, el productor de la ficha del cliente (el asegurado se reconoce aunque el nombre venga en otro orden).
+  // 3. Si no hay ninguno, queda "Sin asignar" para revisar.
+  // 4. Digna: cuando el mismo asegurado aparece el mismo mes en las dos cuentas de Digna, la de mayor comisión
+  //    es la del PAS (va al productor) y la de menor comisión es la del organizador (va a Seguros Dragone).
+  function asignarProductores() {
+    const memo = {};
+    registros.forEach(r => {
+      const k = r.asegurado.toUpperCase();
+      if (!(k in memo)) memo[k] = DS.clienteDe(cli, r.asegurado);
+      r.cliente = memo[k];
+      const dePlanilla = DS.productor(r.cobradorRaw), deFicha = r.cliente ? r.cliente.productor : '';
+      r.cobrador = dePlanilla || deFicha || 'Sin asignar';
+      r.origen = dePlanilla ? 'planilla' : deFicha ? 'ficha' : '';
+    });
+    const grupos = {};
+    registros.filter(r => r.compania.includes('DIGNA')).forEach(r => {
+      const k = r.anio + '|' + r.mes + '|' + DS.claveNombre(r.asegurado);
+      const g = grupos[k] = grupos[k] || {};
+      (g[r.compania] = g[r.compania] || []).push(r);
+    });
+    Object.values(grupos).forEach(g => {
+      const cuentas = Object.keys(g);
+      if (cuentas.length < 2) return;
+      const total = c => Math.abs(g[c].reduce((a, r) => a + r.comision, 0));
+      cuentas.sort((a, b) => total(b) - total(a));
+      cuentas.slice(1).forEach(c => g[c].forEach(r => { r.cobrador = DS.PROPIO; r.origen = 'organizador'; }));
+    });
+    registros.forEach(r => r.color = colorCobrador(r.cobrador));
   }
 
   function colorCobrador(nombre) {
@@ -394,6 +406,7 @@
         '<div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>';
     });
     try {
+      cli = DS.leerClientes(await DS.hojaOpcional('Clientes') || []);
       const resp = await fetch(SCRIPT_URL + "?hoja=Comisiones", { redirect: "follow" });
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       const raw = await resp.json();
@@ -401,7 +414,6 @@
       // Cols: A=Año | B=Mes | C=Compañía | D=Asegurado | E=Ramo | F=Póliza | G=NroEmision | H=Endha(vacía) | I=VigEnd(vacía) | J=Moneda | K=Prima | L=Premio | L=ComisionTotal | M=Cobrador
       registros = raw.slice(1).map((row, i) => {
         const cobradorRaw = String(row[12] || '').trim();
-        const nombre = resolverCobrador(cobradorRaw);
         return {
           _row:        i + 2,
           anio:        String(row[0]  || '').trim(),
@@ -417,10 +429,9 @@
           premio:      parsePeso(row[10]),
           comision:    parsePeso(row[11]),
           cobradorRaw,
-          cobrador:    nombre,
-          color:       colorCobrador(nombre),
         };
       }).filter(r => r.asegurado !== '' || r.compania !== '');
+      asignarProductores();
 
       // Seleccionar 2026 por defecto
       const anios = getAnios();
@@ -524,7 +535,8 @@
     const porCobrador = {};
     data.forEach(r => {
       const key = r.cobrador;
-      if (!porCobrador[key]) porCobrador[key] = { prima:0, premio:0, comision:0, polizas:0, companias:{}, color: r.color };
+      if (!porCobrador[key]) porCobrador[key] = { prima:0, premio:0, comision:0, polizas:0, companias:{}, color: r.color, organizador:0 };
+      if (r.origen === 'organizador') porCobrador[key].organizador += r.comision;
       porCobrador[key].prima    += r.prima;
       porCobrador[key].premio   += r.premio;
       porCobrador[key].comision += r.comision;
@@ -543,7 +555,7 @@
 
     const cobOrdenados = Object.keys(porCobrador).sort((a,b) => porCobrador[b].comision - porCobrador[a].comision);
 
-    let html = '<div class="dashboard-section"><div class="dash-title">Por productor / cobrador</div><div class="productores-grid">';
+    let html = '<div class="dashboard-section"><div class="dash-title">Por productor</div><div class="productores-grid">';
     cobOrdenados.forEach(nombre => {
       const p = porCobrador[nombre];
       const color = p.color;
@@ -551,7 +563,7 @@
       const topComps = Object.entries(p.companias).sort((a,b)=>b[1]-a[1]).slice(0,3)
         .map(([comp,com]) => `<div class="prod-row"><span class="prod-row-lbl">${comp}</span><span class="prod-row-val">${fmtPeso(com)}</span></div>`).join('');
       html += `
-        <div class="productor-card" style="--accent:${color}">
+        <div class="productor-card" style="--accent:${color};cursor:pointer" onclick="verDetalleDe('${nombre.replace(/'/g, '')}')" title="Ver el detalle de ${nombre}">
           <div class="prod-header">
             <div class="prod-avatar" style="color:${color};border-color:${color}40">${iniciales}</div>
             <div><div class="prod-name">${nombre}</div></div>
@@ -561,12 +573,14 @@
             <div class="prod-row"><span class="prod-row-lbl">Premio</span><span class="prod-row-val">${fmtPeso(p.premio)}</span></div>
             <div class="prod-divider"></div>
             <div class="prod-row"><span class="prod-row-lbl">Comisión total</span><span class="prod-row-val gold">${fmtPeso(p.comision)}</span></div>
+            ${p.organizador ? `<div class="prod-row"><span class="prod-row-lbl">Como organizador (Digna)</span><span class="prod-row-val">${fmtPeso(p.organizador)}</span></div>` : ''}
             ${topComps ? '<div class="prod-divider"></div>'+topComps : ''}
           </div>
           <div class="prod-polizas">${p.polizas} póliza${p.polizas!==1?'s':''}</div>
         </div>`;
     });
     html += '</div></div>';
+    html += sinAsignarHTML(data);
 
     html += '<div class="dashboard-section"><div class="dash-title">Por compañía</div><div class="companias-grid">';
     Object.entries(porCompania).sort((a,b)=>b[1].comision-a[1].comision).forEach(([comp,c]) => {
@@ -584,6 +598,47 @@
     html += '</div></div>';
 
     document.getElementById('dash-contenido').innerHTML = html;
+  }
+
+  // ── SIN ASIGNAR: se elige el productor una vez y queda guardado en la ficha del cliente ──
+  function sinAsignarHTML(data) {
+    const porAseg = {};
+    data.filter(r => r.cobrador === 'Sin asignar').forEach(r => {
+      const k = DS.claveNombre(r.asegurado) || r.asegurado;
+      const a = porAseg[k] = porAseg[k] || { nombre: r.asegurado, comision: 0, filas: 0, comps: new Set() };
+      a.comision += r.comision; a.filas++; a.comps.add(r.compania);
+    });
+    const lista = Object.values(porAseg).sort((a, b) => Math.abs(b.comision) - Math.abs(a.comision));
+    if (!lista.length) return '';
+    const total = lista.reduce((a, x) => a + x.comision, 0);
+    const opciones = '<option value="">Elegir productor…</option>' + DS.PRODUCTORES.map(p => `<option>${p}</option>`).join('');
+    return `<div class="dashboard-section"><div class="dash-title">Sin asignar · ${lista.length} ${lista.length === 1 ? 'asegurado' : 'asegurados'} · ${fmtPeso(total)}</div>
+      <p style="font-size:12.5px;color:var(--muted);margin:-.4rem 0 .8rem">Estos asegurados no tienen productor en su ficha de cliente. Elegilo acá una vez: queda guardado en Clientes y las próximas liquidaciones se asignan solas.</p>
+      <div class="tabla-wrap" style="max-height:420px;overflow:auto"><table><thead><tr><th>Asegurado</th><th>Compañía</th><th>Filas</th><th>Comisión</th><th>Productor</th></tr></thead><tbody>
+      ${lista.slice(0, 300).map(a => `<tr><td class="td-asegurado">${DS.esc(a.nombre)}</td><td class="td-compania">${DS.esc([...a.comps].join(', '))}</td><td class="td-mono">${a.filas}</td><td class="td-comision">${fmtPeso(a.comision)}</td>
+        <td><select onchange="asignarA(this)" data-nombre="${DS.esc(a.nombre)}" style="background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12.5px">${opciones}</select></td></tr>`).join('')}
+      </tbody></table></div></div>`;
+  }
+
+  async function asignarA(sel) {
+    const nombre = sel.dataset.nombre, prod = sel.value;
+    if (!prod) return;
+    sel.disabled = true;
+    const previo = DS.clienteDe(cli, nombre);
+    const c = previo ? { ...previo, productor: prod } : { id: DS.nuevoId('CLI'), nombre: nombre.trim().replace(/\s+/g, ' ').toUpperCase(), productor: prod, alta: DS.fechaISO(new Date()) };
+    try {
+      await DS.post({ action: 'guardar_cliente', cliente: DS.clienteAFila(c) });
+      cli = DS.indexarClientes(previo ? cli.lista.map(x => x.id === c.id ? c : x) : cli.lista.concat([{ documento: '', cuit: '', whatsapp: '', telefono: '', mail: '', direccion: '', localidad: '', nacimiento: null, notas: '', ...c }]));
+      asignarProductores(); renderAll();
+      DS.toast(nombre + ' → ' + prod);
+    } catch (e) { DS.toast('No se pudo guardar: ' + e.message, true); sel.disabled = false; sel.value = ''; }
+  }
+
+  // Clic en la tarjeta de un productor: abre el detalle con sus comisiones
+  function verDetalleDe(nombre) {
+    document.getElementById('search').value = nombre;
+    switchTab('detalle', document.querySelectorAll('.tab-btn')[1]);
+    renderDetalle();
   }
 
   // ── DETALLE ────────────────────────────────────────────────────────────────
@@ -623,7 +678,7 @@
         <th onclick="sortBy('prima')">Prima</th>
         <th onclick="sortBy('premio')">Premio</th>
         <th onclick="sortBy('comision')">Comisión</th>
-        <th onclick="sortBy('cobrador')">Cobrador</th>
+        <th onclick="sortBy('cobrador')">Productor</th>
       </tr></thead><tbody>`;
 
     data.forEach(r => {
@@ -639,7 +694,7 @@
         <td class="td-importe">${fmtPeso(r.prima)}</td>
         <td class="td-importe">${fmtPeso(r.premio)}</td>
         <td class="td-comision">${fmtPeso(r.comision)}</td>
-        <td><span class="td-productor" style="color:${r.color};border-color:${r.color}40">${r.cobrador}</span></td>
+        <td><span class="td-productor" style="color:${r.color};border-color:${r.color}40">${r.cobrador}</span>${r.origen === 'organizador' ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">Organizador</div>' : r.origen === 'ficha' ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">Por ficha del cliente</div>' : ''}</td>
       </tr>`;
     });
 
