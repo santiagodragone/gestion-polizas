@@ -206,9 +206,71 @@
     .search-wrap input { width:100%; }
   }
 </style>
+<style>
+  /* Componentes compartidos (de base.css) para ventanas, botones y campos */
+  .btn{padding:.5rem 1rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--white);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .btn:hover{border-color:var(--gold);color:var(--gold);}
+  .btn.primary{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600;}
+  .btn.primary:hover{background:var(--gold2);color:var(--navy);}
+  .btn.sm{padding:.3rem .65rem;font-size:11px;}
+  .btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+  .btn:disabled{opacity:.5;cursor:wait;}
+  .inp{background:var(--navy3);border:1px solid var(--border);color:var(--white);padding:.5rem .8rem;border-radius:6px;font-size:13px;outline:none;transition:border-color .2s;min-width:0;}
+  .inp:focus{border-color:var(--gold);}
+  .inp::placeholder{color:var(--muted);}
+  select.inp option{background:var(--navy2);}
+  .btn-wpp{display:inline-flex;align-items:center;gap:5px;padding:.3rem .7rem;border-radius:6px;background:var(--ok-soft);color:var(--ok);border:1px solid transparent;font-size:11px;font-weight:600;text-decoration:none;transition:all .15s;}
+  .btn-wpp:hover{background:var(--ok);color:var(--navy);}
+  .btn-wpp.off{opacity:.35;pointer-events:none;}
+  .modal-bg{position:fixed;inset:0;z-index:100;background:rgba(5,12,20,.75);display:none;align-items:flex-start;justify-content:center;padding:4vh 1rem;overflow-y:auto;}
+  .modal-bg.open{display:flex;}
+  .modal{background:var(--navy2);border:1px solid var(--border);border-radius:12px;padding:1.6rem;width:100%;max-width:520px;}
+  .modal.wide{max-width:760px;}
+  .modal h3{font-family:var(--serif);font-size:1.2rem;margin-bottom:.3rem;}
+  .modal p.hint{font-size:12px;color:var(--muted);margin-bottom:1.2rem;line-height:1.5;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
+  .fg{display:flex;flex-direction:column;gap:.3rem;}
+  .fg.full{grid-column:1/-1;}
+  .fg label{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+  .fg small{font-size:11px;color:var(--muted);}
+  .modal-actions{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1.4rem;flex-wrap:wrap;}
+  .notice{border:1px solid transparent;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:1rem 1.2rem;font-size:13px;line-height:1.55;margin-bottom:1.2rem;}
+  #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy3);border:1px solid var(--border);padding:.7rem 1.2rem;border-radius:8px;font-size:12.5px;z-index:200;opacity:0;pointer-events:none;transition:all .25s;max-width:90vw;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  #toast.err{border-color:var(--danger);color:#f0a3a3;}
+  .modal.wide{max-width:900px;}
+  .liq-btn{margin-top:.8rem;width:100%;padding:.45rem;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-size:12.5px;font-weight:600;cursor:pointer;}
+  .liq-btn:hover{border-color:var(--text-2);}
+  .cierre{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;padding:.8rem 1rem;border-radius:12px;margin:0 0 1.2rem;font-size:13px;line-height:1.5;}
+  .cierre.abierto{background:var(--info-soft);color:var(--info);}
+  .cierre.cerrado{background:var(--ok-soft);color:var(--ok);}
+  .cierre .txt{flex:1;min-width:240px;} .cierre strong{font-weight:650;}
+  .mini-tabla{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .mini-tabla th{text-align:left;font-weight:500;color:var(--text-2);padding:.5rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap;}
+  .mini-tabla td{padding:.45rem .6rem;border-bottom:1px solid var(--line);}
+  .mini-tabla td.n,.mini-tabla th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .mini-tabla tr.sub td{background:var(--surface-2);font-weight:600;}
+  .mini-tabla tr.tot td{font-weight:700;border-top:2px solid var(--line);}
+  .liq-scroll{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:10px;}
+  .liq-metrics{display:flex;gap:1.6rem;flex-wrap:wrap;margin:.4rem 0 1rem;font-size:12.5px;color:var(--text-2);}
+  .liq-metrics strong{display:block;font-size:1.35rem;color:var(--text);font-weight:650;letter-spacing:-.02em;}
+  .imp-zona{border:1.5px dashed var(--line);border-radius:12px;padding:1.4rem;text-align:center;color:var(--text-2);font-size:13px;line-height:1.6;cursor:pointer;}
+  .imp-zona:hover,.imp-zona.sobre{border-color:var(--accent);background:var(--accent-soft);} .imp-zona strong{color:var(--text);}
+  .imp-pegar{width:100%;margin-top:.7rem;font-size:12px;min-height:60px;resize:vertical;}
+  .imp-mapa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;margin:1rem 0;}
+  .imp-mapa .inp,.imp-def .inp{width:100%;font-size:12.5px;padding:.4rem .5rem;}
+  .imp-def{display:grid;grid-template-columns:2fr 1fr 1fr;gap:.7rem;}
+  .imp-resumen{display:flex;gap:8px;flex-wrap:wrap;margin:.2rem 0 .8rem;font-size:12.5px;}
+  .imp-resumen span{padding:3px 10px;border-radius:20px;background:var(--surface-2);color:var(--text-2);font-weight:500;}
+  .imp-resumen .ok{background:var(--ok-soft);color:var(--ok);} .imp-resumen .mal{background:var(--warn-soft);color:var(--warn);}
+  .evol-wrap{position:relative;height:320px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem;margin-bottom:1.2rem;}
+  @media(max-width:700px){.imp-mapa{grid-template-columns:repeat(2,minmax(0,1fr));}.imp-def{grid-template-columns:1fr;}}
+</style>
 <link rel="stylesheet" href="tema.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="tema.js"></script>
 <script src="datos.js"></script>
+<script src="importar.js"></script>
 </head>
 <body>
 
@@ -234,6 +296,7 @@
         <span class="search-icon">🔍</span>
         <input type="text" id="search" placeholder="Buscar asegurado, compañía..." oninput="renderDetalle()">
       </div>
+      <button class="btn-refresh" onclick="abrirImportar()">Importar liquidación</button>
       <button class="btn-refresh" onclick="cargarDatos()">↺ Actualizar</button>
     </div>
   </div>
@@ -255,9 +318,12 @@
     <div class="filtros-wrap" id="filtros-comp"><span class="filtros-label">COMPAÑÍA</span></div>
   </div>
 
+  <div id="cierre-bar"></div>
+
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard', this)">📊 Resumen</button>
-    <button class="tab-btn" onclick="switchTab('detalle', this)">📋 Detalle</button>
+    <button class="tab-btn active" onclick="switchTab('dashboard', this)">Resumen</button>
+    <button class="tab-btn" onclick="switchTab('detalle', this)">Detalle</button>
+    <button class="tab-btn" onclick="switchTab('evolucion', this)">Evolución</button>
   </div>
 
   <div class="tab-content active" id="tab-dashboard">
@@ -265,9 +331,56 @@
       <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>
     </div>
   </div>
+  <div class="tab-content" id="tab-evolucion">
+    <div id="evol-contenido"></div>
+  </div>
   <div class="tab-content" id="tab-detalle">
     <div id="detalle-contenido">
       <div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- LIQUIDACIÓN DE UN PRODUCTOR -->
+<div class="modal-bg" id="modal-liq">
+  <div class="modal wide">
+    <h3 id="liq-titulo"></h3>
+    <p class="hint" id="liq-estado"></p>
+    <div class="liq-metrics" id="liq-metricas"></div>
+    <div class="liq-scroll"><table class="mini-tabla" id="liq-tabla"></table></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarModal('modal-liq')" style="margin-right:auto">Cerrar</button>
+      <button class="btn" onclick="copiarLiq(this)">Copiar texto</button>
+      <button class="btn" onclick="descargarLiq(this)">Descargar Excel</button>
+      <a class="btn-wpp" id="liq-wpp" target="_blank" rel="noopener" style="padding:.5rem 1rem;font-size:13px">Enviar por WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORTAR LIQUIDACIÓN DE UNA COMPAÑÍA -->
+<div class="modal-bg" id="modal-importar">
+  <div class="modal wide">
+    <h3>Importar liquidación de comisiones</h3>
+    <p class="hint">Subí el Excel de comisiones tal como lo bajás de la compañía. Elegí a qué cuenta y a qué mes corresponde: las filas que ya estaban cargadas para ese mes y esa cuenta no se duplican.</p>
+    <div class="imp-def">
+      <div class="fg"><label for="imp-comp">Cuenta / compañía *</label><input class="inp" id="imp-comp" list="dl-comp" autocomplete="off" placeholder="Ej.: Santi Digna" oninput="vistaPrevia()"><datalist id="dl-comp"></datalist></div>
+      <div class="fg"><label for="imp-mes">Mes *</label><select class="inp" id="imp-mes" onchange="vistaPrevia()"></select></div>
+      <div class="fg"><label for="imp-anio">Año *</label><input class="inp" id="imp-anio" type="number" min="2020" max="2100" oninput="vistaPrevia()"></div>
+    </div>
+    <div id="imp-paso1" style="margin-top:1rem">
+      <div class="imp-zona" id="imp-zona" onclick="document.getElementById('imp-archivo').click()"><strong>Elegí el archivo</strong> o arrastralo acá<br>Excel (.xlsx, .xls) o CSV
+        <input type="file" id="imp-archivo" accept=".xlsx,.xls,.csv,.txt" hidden onchange="leerArchivo(this.files[0])"></div>
+      <textarea class="inp imp-pegar" id="imp-pegar" placeholder="O copiá las filas en el Excel (con los títulos) y pegalas acá" oninput="leerPegado(this.value)"></textarea>
+    </div>
+    <div id="imp-paso2" style="display:none">
+      <div class="imp-mapa" id="imp-mapa"></div>
+      <div class="imp-resumen" id="imp-resumen"></div>
+      <div class="liq-scroll" style="max-height:220px"><table class="mini-tabla"><thead><tr><th>Asegurado</th><th>Póliza</th><th>Ramo</th><th class="n">Premio</th><th class="n">Comisión</th><th>Productor</th></tr></thead><tbody id="imp-tbody"></tbody></table></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="imp-otro" onclick="reiniciarImportar()" style="margin-right:auto;display:none">Elegir otro archivo</button>
+      <button class="btn" onclick="cerrarModal('modal-importar')">Cancelar</button>
+      <button class="btn primary" id="imp-cargar" onclick="importar()" disabled>Importar</button>
     </div>
   </div>
 </div>
@@ -296,6 +409,8 @@
   const MESES_ORDEN = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
   let registros  = [];
+  let cierres    = {};      // '2026-10' -> { fecha, porFirma: { firma -> {productor, origen} } }
+  let evolChart  = null;
   let filtroAnio = 'todos';
   let filtroMes  = 'todos';
   let filtroComp = 'todas';
@@ -378,7 +493,17 @@
       cuentas.sort((a, b) => total(b) - total(a));
       cuentas.slice(1).forEach(c => g[c].forEach(r => { r.cobrador = DS.PROPIO; r.origen = 'organizador'; }));
     });
-    registros.forEach(r => r.color = colorCobrador(r.cobrador));
+    // Mes cerrado: vale lo que se guardó al cerrar. Las filas cargadas después se asignan con las reglas de siempre.
+    registros.forEach(r => {
+      const c = cierres[r.periodo], x = c && c.porFirma[r.firma];
+      r.cerrado = !!x; r.trasCierre = !!c && !x;
+      if (x) { r.cobrador = x.productor || 'Sin asignar'; r.origen = x.origen; }
+      r.color = colorCobrador(r.cobrador);
+    });
+  }
+
+  function firmaDe(r) {
+    return [r.anio, r.mes.toLowerCase(), r.compania, DS.claveNombre(r.asegurado), r.poliza, r.comision.toFixed(2), r.premio.toFixed(2)].join('|');
   }
 
   function colorCobrador(nombre) {
@@ -406,7 +531,14 @@
         '<div class="loading"><span class="dot">▪</span><span class="dot">▪</span><span class="dot">▪</span><span style="margin-left:8px">Cargando...</span></div>';
     });
     try {
-      cli = DS.leerClientes(await DS.hojaOpcional('Clientes') || []);
+      const [cliFilas, cierreFilas] = await Promise.all([DS.hojaOpcional('Clientes'), DS.hojaOpcional('ComisionesCierre')]);
+      cli = DS.leerClientes(cliFilas || []);
+      cierres = {};
+      (cierreFilas || []).forEach(o => {
+        const per = String(o['Periodo']).trim(); if (!per) return;
+        const c = cierres[per] = cierres[per] || { fecha: String(o['Cerrado']).slice(0, 10), porFirma: {} };
+        c.porFirma[String(o['Firma'])] = { productor: String(o['Productor']), origen: String(o['Origen']) };
+      });
       const resp = await fetch(SCRIPT_URL + "?hoja=Comisiones", { redirect: "follow" });
       if (!resp.ok) throw new Error("HTTP " + resp.status);
       const raw = await resp.json();
@@ -422,8 +554,8 @@
           asegurado:   String(row[3]  || '').trim(),
           ramo:        String(row[4]  || '').trim(),
           poliza:      String(row[5]  || '').trim(),
-          // row[6] = Fecha Emision Endoso  → ignorada
-          // row[7] = Fecha Vigencia Endoso → ignorada
+          companiaRaw: String(row[2]  || '').trim(),
+          fechaEm:     String(row[6]  || '').trim(),
           moneda:      String(row[8]  || '').trim(),
           prima:       parsePeso(row[9]),
           premio:      parsePeso(row[10]),
@@ -431,6 +563,14 @@
           cobradorRaw,
         };
       }).filter(r => r.asegurado !== '' || r.compania !== '');
+      // Período (2026-10) y firma de cada fila: con la firma se reconoce una fila al cerrar el mes y al importar
+      const vistas = {};
+      registros.forEach(r => {
+        const m = MESES_ORDEN.indexOf(r.mes.toLowerCase());
+        r.periodo = m >= 0 && r.anio ? r.anio + '-' + String(m + 1).padStart(2, '0') : '';
+        const f = firmaDe(r); vistas[f] = (vistas[f] || 0) + 1;
+        r.firma = f + '#' + vistas[f];
+      });
       asignarProductores();
 
       // Seleccionar 2026 por defecto
@@ -503,7 +643,10 @@
     return btn;
   }
 
-  function renderAll() { renderStats(); renderDashboard(); renderDetalle(); }
+  function renderAll() {
+    renderStats(); renderCierre(); renderDashboard(); renderDetalle();
+    if (document.getElementById('tab-evolucion').classList.contains('active')) renderEvolucion();
+  }
 
   // ── STATS ──────────────────────────────────────────────────────────────────
   function renderStats() {
@@ -521,6 +664,7 @@
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-'+tab).classList.add('active');
     document.getElementById('search-wrap').classList.toggle('visible', tab==='detalle');
+    if (tab === 'evolucion') renderEvolucion();
   }
 
   // ── DASHBOARD ──────────────────────────────────────────────────────────────
@@ -577,6 +721,7 @@
             ${topComps ? '<div class="prod-divider"></div>'+topComps : ''}
           </div>
           <div class="prod-polizas">${p.polizas} póliza${p.polizas!==1?'s':''}</div>
+          ${nombre !== 'Sin asignar' ? `<button class="liq-btn" onclick="event.stopPropagation();abrirLiquidacion('${nombre.replace(/'/g, '')}')">Liquidación del mes</button>` : ''}
         </div>`;
     });
     html += '</div></div>';
@@ -611,12 +756,13 @@
     const lista = Object.values(porAseg).sort((a, b) => Math.abs(b.comision) - Math.abs(a.comision));
     if (!lista.length) return '';
     const total = lista.reduce((a, x) => a + x.comision, 0);
+    const bloqueado = periodoActual() && cierres[periodoActual()];
     const opciones = '<option value="">Elegir productor…</option>' + DS.PRODUCTORES.map(p => `<option>${p}</option>`).join('');
     return `<div class="dashboard-section"><div class="dash-title">Sin asignar · ${lista.length} ${lista.length === 1 ? 'asegurado' : 'asegurados'} · ${fmtPeso(total)}</div>
       <p style="font-size:12.5px;color:var(--muted);margin:-.4rem 0 .8rem">Estos asegurados no tienen productor en su ficha de cliente. Elegilo acá una vez: queda guardado en Clientes y las próximas liquidaciones se asignan solas.</p>
       <div class="tabla-wrap" style="max-height:420px;overflow:auto"><table><thead><tr><th>Asegurado</th><th>Compañía</th><th>Filas</th><th>Comisión</th><th>Productor</th></tr></thead><tbody>
       ${lista.slice(0, 300).map(a => `<tr><td class="td-asegurado">${DS.esc(a.nombre)}</td><td class="td-compania">${DS.esc([...a.comps].join(', '))}</td><td class="td-mono">${a.filas}</td><td class="td-comision">${fmtPeso(a.comision)}</td>
-        <td><select onchange="asignarA(this)" data-nombre="${DS.esc(a.nombre)}" style="background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12.5px">${opciones}</select></td></tr>`).join('')}
+        <td>${bloqueado ? '<span style="color:var(--muted);font-size:12px">Mes cerrado</span>' : `<select onchange="asignarA(this)" data-nombre="${DS.esc(a.nombre)}" style="background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12.5px">${opciones}</select>`}</td></tr>`).join('')}
       </tbody></table></div></div>`;
   }
 
@@ -694,7 +840,7 @@
         <td class="td-importe">${fmtPeso(r.prima)}</td>
         <td class="td-importe">${fmtPeso(r.premio)}</td>
         <td class="td-comision">${fmtPeso(r.comision)}</td>
-        <td><span class="td-productor" style="color:${r.color};border-color:${r.color}40">${r.cobrador}</span>${r.origen === 'organizador' ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">Organizador</div>' : r.origen === 'ficha' ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">Por ficha del cliente</div>' : ''}</td>
+        <td><span class="td-productor" style="color:${r.color};border-color:${r.color}40">${r.cobrador}</span>${r.origen === 'organizador' ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">Organizador</div>' : r.origen === 'ficha' ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">Por ficha del cliente</div>' : ''}${r.trasCierre ? '<div style="font-size:11px;color:var(--warn);margin-top:2px">Cargada después del cierre</div>' : ''}</td>
       </tr>`;
     });
 
@@ -707,6 +853,249 @@
     else { sortCol = col; sortDir = 1; }
     renderDetalle();
   }
+
+
+  // ═══ CIERRE DE MES ═══════════════════════════════════════════════════════
+  function periodoActual() {
+    if (filtroAnio === 'todos' || filtroMes === 'todos') return '';
+    const m = MESES_ORDEN.indexOf(filtroMes.toLowerCase());
+    return m >= 0 ? filtroAnio + '-' + String(m + 1).padStart(2, '0') : '';
+  }
+  const nombrePeriodo = per => { const [y, m] = per.split('-'); return capMes(MESES_ORDEN[+m - 1]) + ' ' + y; };
+  const fechaCorta = iso => { const x = String(iso).match(/(\d{4})-(\d{2})-(\d{2})/); return x ? x[3] + '/' + x[2] + '/' + x[1] : iso; };
+
+  function renderCierre() {
+    const per = periodoActual(), bar = document.getElementById('cierre-bar');
+    if (!per) { bar.innerHTML = ''; return; }
+    const c = cierres[per], filas = registros.filter(r => r.periodo === per);
+    if (!filas.length) { bar.innerHTML = ''; return; }
+    if (c) {
+      const tras = filas.filter(r => r.trasCierre).length;
+      bar.innerHTML = `<div class="cierre cerrado"><div class="txt"><strong>${nombrePeriodo(per)} está cerrado</strong> desde el ${fechaCorta(c.fecha)}. Los cambios en las fichas de clientes ya no modifican esta liquidación.${tras ? ` Hay ${tras} ${tras === 1 ? 'fila cargada' : 'filas cargadas'} después del cierre: se asignan con las reglas de siempre.` : ''}</div>
+        <button class="btn sm" onclick="reabrirMes(this)">Reabrir</button></div>`;
+    } else {
+      bar.innerHTML = `<div class="cierre abierto"><div class="txt"><strong>${nombrePeriodo(per)} está abierto.</strong> Si cambiás el productor de un cliente, esta liquidación cambia. Cerralo cuando lo hayas pagado.</div>
+        <button class="btn sm primary" onclick="cerrarMes(this)">Cerrar liquidación del mes</button></div>`;
+    }
+  }
+
+  async function cerrarMes(btn) {
+    const per = periodoActual(); if (!per) return;
+    const filas = registros.filter(r => r.periodo === per), sin = filas.filter(r => r.cobrador === 'Sin asignar');
+    if (sin.length && btn.dataset.ok !== '1') {
+      btn.dataset.ok = '1';
+      btn.textContent = `Hay ${sin.length} sin asignar (${fmtPeso(sin.reduce((a, r) => a + r.comision, 0))}). Tocá de nuevo para cerrar igual`;
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Cerrando...';
+    try {
+      const r = await DS.post({ action: 'cerrar_mes', periodo: per, filas: filas.map(x => ({ firma: x.firma, productor: x.cobrador, origen: x.origen || '', comision: x.comision })) });
+      cierres[per] = { fecha: r.fecha || DS.fechaISO(new Date()), porFirma: {} };
+      filas.forEach(x => cierres[per].porFirma[x.firma] = { productor: x.cobrador, origen: x.origen || '' });
+      asignarProductores(); renderAll();
+      DS.toast('Liquidación de ' + nombrePeriodo(per) + ' cerrada');
+    } catch (e) { DS.toast('No se pudo cerrar: ' + e.message, true); btn.disabled = false; btn.textContent = 'Cerrar liquidación del mes'; }
+  }
+
+  async function reabrirMes(btn) {
+    const per = periodoActual(); if (!per) return;
+    if (btn.dataset.ok !== '1') { btn.dataset.ok = '1'; btn.textContent = '¿Seguro? Se recalcula con las fichas actuales. Tocá de nuevo'; return; }
+    btn.disabled = true;
+    try { await DS.post({ action: 'reabrir_mes', periodo: per }); delete cierres[per]; asignarProductores(); renderAll(); DS.toast(nombrePeriodo(per) + ' reabierto'); }
+    catch (e) { DS.toast('No se pudo reabrir: ' + e.message, true); btn.disabled = false; }
+  }
+
+  // ═══ LIQUIDACIÓN DE UN PRODUCTOR ═════════════════════════════════════════
+  let liq = null;
+  function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  function abrirLiquidacion(nombre) {
+    const per = periodoActual();
+    if (!per) { DS.toast('Elegí un año y un mes arriba para armar la liquidación', true); return; }
+    // La liquidación es del mes completo, de todas las compañías
+    const filas = registros.filter(r => r.periodo === per && r.cobrador === nombre)
+      .sort((a, b) => a.compania.localeCompare(b.compania) || a.asegurado.localeCompare(b.asegurado, 'es'));
+    const total = filas.reduce((a, r) => a + r.comision, 0), org = filas.filter(r => r.origen === 'organizador').reduce((a, r) => a + r.comision, 0);
+    const porComp = {}; filas.forEach(r => { const c = porComp[r.compania] = porComp[r.compania] || { filas: [], total: 0 }; c.filas.push(r); c.total += r.comision; });
+    liq = { nombre, per, filas, total, org, porComp };
+
+    document.getElementById('liq-titulo').textContent = 'Liquidación de ' + nombre + ' — ' + nombrePeriodo(per);
+    document.getElementById('liq-estado').textContent = cierres[per] ? 'Mes cerrado el ' + fechaCorta(cierres[per].fecha) + ': estos importes ya no cambian.' : 'Mes abierto: si cambia el productor de algún cliente, estos importes cambian. Cerrá el mes cuando lo pagues.';
+    document.getElementById('liq-metricas').innerHTML = `<div><strong>${fmtPeso(total)}</strong>Comisión total</div><div><strong>${filas.length}</strong>Pólizas</div>` +
+      Object.entries(porComp).map(([c, x]) => `<div><strong>${fmtPeso(x.total)}</strong>${DS.esc(c)}</div>`).join('') +
+      (org ? `<div><strong>${fmtPeso(org)}</strong>Como organizador (Digna)</div>` : '');
+    document.getElementById('liq-tabla').innerHTML = '<thead><tr><th>Asegurado</th><th>Ramo</th><th>Póliza</th><th class="n">Premio</th><th class="n">Comisión</th></tr></thead><tbody>' +
+      Object.entries(porComp).map(([c, x]) => `<tr class="sub"><td colspan="4">${DS.esc(c)}</td><td class="n">${fmtPeso(x.total)}</td></tr>` +
+        x.filas.map(r => `<tr><td>${DS.esc(r.asegurado)}${r.origen === 'organizador' ? ' <span style="color:var(--muted);font-size:11px">· organizador</span>' : ''}</td><td>${DS.esc(r.ramo) || '—'}</td><td>${DS.esc(r.poliza) || '—'}</td><td class="n">${fmtPeso(r.premio)}</td><td class="n">${fmtPeso(r.comision)}</td></tr>`).join('')).join('') +
+      `<tr class="tot"><td colspan="4">Total</td><td class="n">${fmtPeso(total)}</td></tr></tbody>`;
+    document.getElementById('liq-wpp').href = 'https://wa.me/?text=' + encodeURIComponent(textoLiq());
+    document.getElementById('modal-liq').classList.add('open');
+  }
+
+  function textoLiq() {
+    const l = liq, nombre = l.nombre.split(' ')[0];
+    return `Hola ${nombre}, te paso la liquidación de comisiones de ${nombrePeriodo(l.per).toLowerCase()}.\n\n` +
+      Object.entries(l.porComp).map(([c, x]) => `• ${c}: ${fmtPeso(x.total)} (${x.filas.length} ${x.filas.length === 1 ? 'póliza' : 'pólizas'})`).join('\n') +
+      `\n\nTotal: ${fmtPeso(l.total)}\n\nTe mando el detalle en Excel. Cualquier consulta avisame.\nSeguros Dragone`;
+  }
+
+  async function copiarLiq(btn) {
+    try { await navigator.clipboard.writeText(textoLiq()); btn.textContent = 'Copiado'; setTimeout(() => btn.textContent = 'Copiar texto', 1600); }
+    catch (e) { DS.toast('No se pudo copiar. Usá el botón de WhatsApp.', true); }
+  }
+
+  async function descargarLiq(btn) {
+    const l = liq; btn.disabled = true;
+    try {
+      await IMP.cargarLector();
+      const aoa = [['Liquidación de comisiones — ' + l.nombre + ' — ' + nombrePeriodo(l.per)], [],
+        ['Compañía', 'Asegurado', 'Ramo', 'Póliza', 'Prima', 'Premio', 'Comisión', 'Observación']];
+      l.filas.forEach(r => aoa.push([r.companiaRaw || r.compania, r.asegurado, r.ramo, r.poliza, Math.round(r.prima * 100) / 100, Math.round(r.premio * 100) / 100, Math.round(r.comision * 100) / 100, r.origen === 'organizador' ? 'Organizador' : '']));
+      aoa.push([], ['', '', '', '', '', 'Total', Math.round(l.total * 100) / 100]);
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = [{ wch: 16 }, { wch: 34 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Liquidación');
+      XLSX.writeFile(wb, `Liquidacion ${l.nombre} ${nombrePeriodo(l.per)}.xlsx`);
+    } catch (e) { DS.toast('No se pudo armar el Excel: ' + e.message, true); }
+    btn.disabled = false;
+  }
+
+  // ═══ EVOLUCIÓN POR PRODUCTOR ═════════════════════════════════════════════
+  function renderEvolucion() {
+    const cont = document.getElementById('evol-contenido');
+    const anio = filtroAnio !== 'todos' ? filtroAnio : getAnios()[0];
+    const data = registros.filter(r => r.anio === anio && r.periodo && (filtroComp === 'todas' || r.compania === filtroComp));
+    if (!data.length) { cont.innerHTML = '<div class="empty"><p>No hay comisiones cargadas para ' + (anio || 'este año') + '.</p></div>'; return; }
+    const meses = [...new Set(data.map(r => r.periodo))].sort();
+    const tot = {}; data.forEach(r => { const t = tot[r.cobrador] = tot[r.cobrador] || {}; t[r.periodo] = (t[r.periodo] || 0) + r.comision; });
+    const suma = p => meses.reduce((a, m) => a + (tot[p][m] || 0), 0);
+    const prods = Object.keys(tot).sort((a, b) => suma(b) - suma(a));
+    const clientesDe = p => cli ? cli.lista.filter(c => c.productor === p).length : 0;
+    const varUlt = p => { if (meses.length < 2) return ''; const a = tot[p][meses[meses.length - 2]] || 0, b = tot[p][meses[meses.length - 1]] || 0;
+      if (!a) return ''; const v = Math.round((b - a) / Math.abs(a) * 100); return `<span style="color:${v >= 0 ? 'var(--ok)' : 'var(--danger)'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v)}%</span>`; };
+    cont.innerHTML = `<div class="dash-title" style="margin-bottom:.8rem">Comisión por productor, mes a mes — ${anio}${filtroComp !== 'todas' ? ' · ' + filtroComp : ''}</div>
+      <div class="evol-wrap"><canvas id="evol-chart"></canvas></div>
+      <div class="tabla-wrap" style="overflow:auto"><table class="mini-tabla"><thead><tr><th>Productor</th>${meses.map(m => `<th class="n">${capMes(MESES_ORDEN[+m.slice(5) - 1]).slice(0, 3)}</th>`).join('')}<th class="n">Total</th><th class="n">Último mes</th><th class="n">Clientes</th></tr></thead><tbody>
+      ${prods.map(p => `<tr><td><strong>${DS.esc(p)}</strong></td>${meses.map(m => `<td class="n">${tot[p][m] ? fmtPeso(tot[p][m]) : '—'}</td>`).join('')}<td class="n"><strong>${fmtPeso(suma(p))}</strong></td><td class="n">${varUlt(p)}</td><td class="n">${p === 'Sin asignar' ? '—' : clientesDe(p)}</td></tr>`).join('')}
+      </tbody></table></div>`;
+    if (typeof Chart === 'undefined') return;
+    if (evolChart) evolChart.destroy();
+    evolChart = new Chart(document.getElementById('evol-chart'), {
+      type: 'line',
+      data: { labels: meses.map(m => capMes(MESES_ORDEN[+m.slice(5) - 1]).slice(0, 3)), datasets: prods.map(p => ({ label: p, data: meses.map(m => tot[p][m] || 0),
+        borderColor: colorCobrador(p), backgroundColor: colorCobrador(p), tension: .3, pointRadius: 3, borderWidth: 2 })) },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } }, tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtPeso(c.parsed.y) } } },
+        scales: { y: { ticks: { callback: v => '$' + (Math.abs(v) >= 1e6 ? (v / 1e6).toLocaleString('es-AR') + ' M' : Math.round(v / 1e3).toLocaleString('es-AR') + ' mil') } } } }
+    });
+  }
+
+  // ═══ IMPORTAR LIQUIDACIÓN DE UNA COMPAÑÍA ════════════════════════════════
+  // Qué títulos de columna se reconocen para cada dato (sin acentos ni mayúsculas). Sumar los que falten.
+  const CAMPOS_COM = [
+    { id: 'asegurado', nombre: 'Asegurado *', claves: ['asegurado', 'apellido y nombre', 'nombre y apellido', 'cliente', 'tomador', 'razon social', 'nombre'] },
+    { id: 'comision', nombre: 'Comisión *', claves: ['comision total', 'comision', 'importe comision', 'comisiones', 'com total'] },
+    { id: 'poliza', nombre: 'Póliza', claves: ['poliza', 'nro poliza', 'numero de poliza', 'n poliza'] },
+    { id: 'ramo', nombre: 'Ramo', claves: ['ramo', 'seccion', 'riesgo', 'producto', 'cobertura'] },
+    { id: 'prima', nombre: 'Prima', claves: ['prima', 'prima neta'] },
+    { id: 'premio', nombre: 'Premio', claves: ['premio', 'premio total'] },
+    { id: 'fechaVig', nombre: 'Fecha de vigencia', claves: ['fecha vigencia endoso', 'fecha vigencia', 'vigencia desde', 'inicio vigencia', 'vigencia'] },
+    { id: 'fechaEm', nombre: 'Fecha de emisión', claves: ['fecha emision endoso', 'fecha emision', 'fecha de emision', 'emision', 'fecha'] },
+    { id: 'moneda', nombre: 'Moneda', claves: ['moneda', 'mon'] },
+    { id: 'cobrador', nombre: 'Cobrador / productor', claves: ['cobrador', 'productor', 'pas'] }
+  ];
+  let imp = null, impLista = null;
+
+  function abrirImportar() {
+    reiniciarImportar();
+    const comps = [...new Set(registros.map(r => r.companiaRaw).filter(Boolean))].sort();
+    document.getElementById('dl-comp').innerHTML = comps.map(c => `<option value="${DS.esc(c)}">`).join('');
+    const ant = new Date(DS.hoy.getFullYear(), DS.hoy.getMonth() - 1, 1);          // por defecto, el mes anterior
+    document.getElementById('imp-mes').innerHTML = MESES_ORDEN.map((m, i) => `<option value="${capMes(m)}"${i === ant.getMonth() ? ' selected' : ''}>${capMes(m)}</option>`).join('');
+    document.getElementById('imp-anio').value = ant.getFullYear();
+    document.getElementById('imp-comp').value = filtroComp !== 'todas' ? (registros.find(r => r.compania === filtroComp) || {}).companiaRaw || '' : '';
+    document.getElementById('modal-importar').classList.add('open');
+  }
+  function reiniciarImportar() {
+    imp = impLista = null;
+    ['imp-paso1'].forEach(id => document.getElementById(id).style.display = '');
+    document.getElementById('imp-paso2').style.display = 'none'; document.getElementById('imp-otro').style.display = 'none';
+    document.getElementById('imp-archivo').value = ''; document.getElementById('imp-pegar').value = '';
+    const b = document.getElementById('imp-cargar'); b.disabled = true; b.textContent = 'Importar';
+  }
+  async function leerArchivo(a) { if (!a) return; try { preparar(await IMP.tablaDeArchivo(a)); } catch (e) { DS.toast('No pude leer el archivo: ' + e.message, true); } }
+  function leerPegado(t) { if (t.trim().split('\n').length >= 2) preparar(IMP.tablaDeTexto(t)); }
+
+  function preparar(tabla) {
+    imp = IMP.reconocer(tabla, CAMPOS_COM);
+    if (!imp) { DS.toast('El archivo no tiene filas para importar', true); return; }
+    document.getElementById('imp-mapa').innerHTML = CAMPOS_COM.map(k => `<div class="fg"><label for="map-${k.id}">${k.nombre}</label>
+      <select class="inp" id="map-${k.id}" onchange="imp.mapa['${k.id}']=+this.value;vistaPrevia()"><option value="-1">— No está en el archivo —</option>
+      ${imp.cols.map((c, i) => `<option value="${i}"${imp.mapa[k.id] === i ? ' selected' : ''}>${DS.esc(c)}</option>`).join('')}</select></div>`).join('');
+    document.getElementById('imp-paso1').style.display = 'none'; document.getElementById('imp-paso2').style.display = ''; document.getElementById('imp-otro').style.display = '';
+    vistaPrevia();
+  }
+
+  const fechaTexto = v => { const d = IMP.fecha(v); return d ? DS.p2(d.getDate()) + '/' + DS.p2(d.getMonth() + 1) + '/' + d.getFullYear() : String(v == null ? '' : v).trim(); };
+
+  function armarImportacion() {
+    const m = imp.mapa, val = (f, id) => m[id] >= 0 ? f[m[id]] : '';
+    const comp = document.getElementById('imp-comp').value.trim(), mes = document.getElementById('imp-mes').value, anio = String(document.getElementById('imp-anio').value).trim();
+    // Lo que ya está cargado para ese mes y esa cuenta (contando repetidos, por si hay filas idénticas legítimas)
+    const ya = {};
+    registros.filter(r => r.anio === anio && r.mes.toLowerCase() === mes.toLowerCase() && r.compania === comp.toUpperCase())
+      .forEach(r => { const f = firmaDe(r); ya[f] = (ya[f] || 0) + 1; });
+    const nuevas = [], repetidas = [];
+    imp.filas.forEach(f => {
+      const aseg = String(val(f, 'asegurado') == null ? '' : val(f, 'asegurado')).trim().replace(/\s+/g, ' ');
+      if (!aseg || /^total/i.test(aseg)) return;                                   // filas vacías o de totales
+      const r = { anio, mes, compania: comp.toUpperCase(), companiaRaw: comp, asegurado: aseg, ramo: String(val(f, 'ramo') || '').trim(), poliza: String(val(f, 'poliza') || '').trim(),
+        fechaEm: fechaTexto(val(f, 'fechaEm')), fechaVig: fechaTexto(val(f, 'fechaVig')), moneda: String(val(f, 'moneda') || '').trim() || '$',
+        prima: DS.parsePeso(val(f, 'prima')), premio: DS.parsePeso(val(f, 'premio')), comision: DS.parsePeso(val(f, 'comision')), cobradorRaw: String(val(f, 'cobrador') || '').trim() };
+      const k = firmaDe(r);
+      if (ya[k]) { ya[k]--; repetidas.push(r); } else nuevas.push(r);
+    });
+    // A quién iría cada una, con las mismas reglas del resumen (sin la regla de Digna, que se aplica con el mes completo)
+    nuevas.forEach(r => { const c = DS.clienteDe(cli, r.asegurado); r.cobrador = DS.productor(r.cobradorRaw) || (c && c.productor) || 'Sin asignar'; });
+    return { nuevas, repetidas, comp, mes, anio };
+  }
+
+  function vistaPrevia() {
+    if (!imp) return;
+    const l = impLista = armarImportacion(), b = document.getElementById('imp-cargar');
+    const falta = !l.comp ? 'Escribí a qué cuenta corresponde (por ejemplo, Santi Digna)' : !/^\d{4}$/.test(l.anio) ? 'Revisá el año'
+      : imp.mapa.asegurado < 0 ? 'Elegí qué columna tiene el asegurado' : imp.mapa.comision < 0 ? 'Elegí qué columna tiene la comisión' : '';
+    const sin = l.nuevas.filter(r => r.cobrador === 'Sin asignar').length;
+    document.getElementById('imp-resumen').innerHTML = falta ? `<span class="mal">${falta}</span>` : `
+      <span class="ok">${l.nuevas.length} nuevas · ${fmtPeso(l.nuevas.reduce((a, r) => a + r.comision, 0))}</span>
+      ${l.repetidas.length ? `<span>${l.repetidas.length} ya estaban cargadas en ${DS.esc(l.mes)} ${DS.esc(l.anio)} (no se duplican)</span>` : ''}
+      ${sin ? `<span class="mal">${sin} sin productor: se asignan después desde el resumen</span>` : ''}`;
+    document.getElementById('imp-tbody').innerHTML = l.nuevas.slice(0, 80).map(r => `<tr><td>${DS.esc(r.asegurado)}</td><td>${DS.esc(r.poliza) || '—'}</td><td>${DS.esc(r.ramo) || '—'}</td><td class="n">${fmtPeso(r.premio)}</td><td class="n">${fmtPeso(r.comision)}</td><td>${DS.esc(r.cobrador)}</td></tr>`).join('');
+    b.disabled = !!falta || !l.nuevas.length;
+    b.textContent = !falta && l.nuevas.length ? `Importar ${l.nuevas.length} ${l.nuevas.length === 1 ? 'fila' : 'filas'}` : 'Importar';
+  }
+
+  async function importar() {
+    const l = impLista, b = document.getElementById('imp-cargar'); if (!l) return;
+    b.disabled = true; b.textContent = 'Importando...';
+    const filas = l.nuevas.map(r => [Number(r.anio), r.mes, r.companiaRaw, r.asegurado, r.ramo, r.poliza, r.fechaEm, r.fechaVig, r.moneda, r.prima, r.premio, r.comision, r.cobradorRaw]);
+    try {
+      const res = await DS.post({ action: 'importar_comisiones', filas });
+      cerrarModal('modal-importar');
+      DS.toast(`Listo: se agregaron ${res.agregadas} filas a ${l.mes} ${l.anio}`);
+      filtroAnio = l.anio; filtroMes = l.mes; filtroComp = 'todas';
+      await cargarDatos();
+    } catch (e) { DS.toast('No se pudo importar: ' + e.message, true); b.disabled = false; b.textContent = 'Reintentar'; }
+  }
+
+  (() => {
+    const zona = document.getElementById('imp-zona');
+    ['dragover', 'dragenter'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('sobre'); }));
+    ['dragleave', 'drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('sobre'); }));
+    zona.addEventListener('drop', e => leerArchivo(e.dataTransfer.files[0]));
+    document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open')); });
+  })();
 
   cargarDatos();
 </script>

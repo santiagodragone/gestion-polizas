@@ -52,6 +52,7 @@
       <option value="sinwpp">Sin WhatsApp</option>
       <option value="compartido">Teléfono compartido</option>
       <option value="cumples">Próximos cumpleaños</option>
+      <option value="comision">Mayor comisión del año</option>
       <option value="duplicados">Posibles duplicados</option>
     </select>
     <div class="spacer"></div>
@@ -79,10 +80,11 @@
       <div class="fg"><label for="f-mail">Mail</label><input class="inp" id="f-mail" type="email" autocomplete="off"></div>
       <div class="fg" style="grid-column:span 2"><label for="f-dir">Dirección</label><input class="inp" id="f-dir" autocomplete="off"></div>
       <div class="fg"><label for="f-loc">Localidad</label><input class="inp" id="f-loc" autocomplete="off"></div>
-      <div class="fg"><label for="f-prod">Productor</label><input class="inp" id="f-prod" list="dl-prod" autocomplete="off"><datalist id="dl-prod"></datalist></div>
+      <div class="fg"><label for="f-prod">Productor *</label><input class="inp" id="f-prod" list="dl-prod" autocomplete="off"><datalist id="dl-prod"></datalist></div>
       <div class="fg" style="grid-column:span 2"><label for="f-notas">Notas</label><input class="inp" id="f-notas" autocomplete="off"></div>
     </div>
     <div class="ficha-polizas" id="f-polizas"></div>
+    <div class="ficha-polizas" id="f-comisiones"></div>
     <div class="modal-actions">
       <button class="btn danger" id="f-borrar" onclick="borrar(this)" style="margin-right:auto">Eliminar</button>
       <a class="btn-wpp" id="f-chat" target="_blank" rel="noopener" style="padding:.5rem 1rem;font-size:12px">Abrir WhatsApp</a>
@@ -124,7 +126,9 @@ let cli = DS.indexarClientes([]), ren = { polizas: [], estados: {} }, cob = { cu
 let polizasDe = {};      // id de cliente -> pólizas y cupones que tiene
 let sueltos = [];        // personas con pólizas que todavía no están en Clientes
 let editId = null;
-let filtroProd = null;   // null = todos; '' = sin productor; o el nombre del productor
+let filtroProd = null;
+let comDe = null;        // id de cliente -> { '2026': { total, n, comps: { compañía: total } } }  (se carga aparte: la hoja es grande)
+const ANIO = String(hoy.getFullYear());   // null = todos; '' = sin productor; o el nombre del productor
 
 async function cargarDatos() {
   try {
@@ -134,6 +138,40 @@ async function cargarDatos() {
   } catch (e) { $('last-update').textContent = 'Sin conexión con la planilla'; }
   if (location.hash === '#cumples') { $('filtro').value = 'cumples'; history.replaceState(null, '', location.pathname); }
   render();
+  cargarComisiones();
+}
+
+// Comisiones que dejó cada cliente, por año y compañía. El asegurado se reconoce aunque venga en otro orden.
+async function cargarComisiones() {
+  let filas;
+  try { filas = await DS.hojaCruda('Comisiones'); } catch (e) { return; }
+  const memo = {}, res = {};
+  filas.forEach(f => {
+    const aseg = String(f[3] || '').trim(), anio = String(f[0] || '').trim(); if (!aseg || !anio) return;
+    const k = aseg.toUpperCase();
+    if (!(k in memo)) memo[k] = DS.clienteDe(cli, aseg);
+    const c = memo[k]; if (!c) return;
+    const delCliente = res[c.id] = res[c.id] || {};
+    const a = delCliente[anio] = delCliente[anio] || { total: 0, n: 0, comps: {} };
+    const com = DS.parsePeso(f[11]), comp = String(f[2] || '').trim();
+    a.total += com; a.n++; a.comps[comp] = (a.comps[comp] || 0) + com;
+  });
+  comDe = res;
+  if ($('filtro').value === 'comision') render();
+  if ($('modal-ficha').classList.contains('open') && editId) mostrarComisiones(editId);
+}
+const comisionAnio = (id, anio) => comDe && comDe[id] && comDe[id][anio] ? comDe[id][anio].total : 0;
+
+function mostrarComisiones(id) {
+  const box = $('f-comisiones'); if (!box) return;
+  if (!id) { box.innerHTML = ''; return; }
+  if (!comDe) { box.innerHTML = '<h4>Comisiones generadas</h4><div class="sub">Cargando comisiones…</div>'; return; }
+  const porAnio = comDe[id] || {}, anios = Object.keys(porAnio).sort().reverse();
+  if (!anios.length) { box.innerHTML = '<h4>Comisiones generadas</h4><div class="sub">No figura en las liquidaciones de comisiones cargadas.</div>'; return; }
+  const act = porAnio[anios[0]];
+  box.innerHTML = `<h4>Comisiones generadas</h4>` +
+    anios.slice(0, 3).map(a => `<div class="pol"><div><strong>${a}</strong> · ${porAnio[a].n} ${porAnio[a].n === 1 ? 'movimiento' : 'movimientos'}</div><strong>${DS.pesos(porAnio[a].total)}</strong></div>`).join('') +
+    `<div class="sub" style="margin-top:.5rem">${anios[0]} por compañía: ${Object.entries(act.comps).sort((x, y) => y[1] - x[1]).map(([c, v]) => esc(c) + ' ' + DS.pesos(v)).join(' · ')}</div>`;
 }
 
 // Cruza las pólizas de Renovaciones y los cupones de Cobranza con los clientes
@@ -189,6 +227,7 @@ function render() {
   let lista = cli.lista.filter(c => filtroProd === null || c.productor === filtroProd).filter(c => !q || norm([c.nombre, c.documento, c.cuit, c.whatsapp, c.telefono, c.mail].join(' ')).includes(q));
   if (f === 'sinwpp') lista = lista.filter(c => !c.whatsapp);
   if (f === 'compartido') lista = lista.filter(c => c.compartido >= DS.TEL_COMPARTIDO).sort((a, b) => a.whatsapp.localeCompare(b.whatsapp));
+  else if (f === 'comision') lista = lista.filter(c => comisionAnio(c.id, ANIO)).sort((a, b) => comisionAnio(b.id, ANIO) - comisionAnio(a.id, ANIO));
   else if (f === 'cumples') { const ids = new Map(cumples.map(x => [x.c.id, x])); lista = lista.filter(c => ids.has(c.id)).sort((a, b) => ids.get(a.id).faltan - ids.get(b.id).faltan); }
   else lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
@@ -201,11 +240,11 @@ function render() {
       <td class="mono">${esc(c.whatsapp) || '<span style="color:var(--text-2)">—</span>'}${c.compartido >= DS.TEL_COMPARTIDO ? `<div><span class="tag aviso">Lo comparten ${c.compartido}</span></div>` : ''}${!c.whatsapp && c.telefono ? `<div class="sub">Fijo ${esc(c.telefono)}</div>` : ''}</td>
       <td class="oculta-cel">${esc(c.mail) || '—'}</td>
       <td>${ramos.length ? ramos.map(r => `<span class="tag ramo">${esc(r)}</span>`).join('') : '<span style="color:var(--text-2)">Sin pólizas cargadas</span>'}</td>
-      <td>${cuTxt}</td><td>${saludo}</td></tr>`;
+      <td>${cuTxt}</td>${f === 'comision' ? `<td class="num"><strong>${DS.pesos(comisionAnio(c.id, ANIO))}</strong></td>` : ''}<td>${saludo}</td></tr>`;
   };
-  $('lista').innerHTML = lista.length ? `<table><thead><tr><th>Cliente</th><th>WhatsApp</th><th class="oculta-cel">Mail</th><th>Ramos contratados</th><th>Cumpleaños</th><th></th></tr></thead>
+  $('lista').innerHTML = lista.length ? `<table><thead><tr><th>Cliente</th><th>WhatsApp</th><th class="oculta-cel">Mail</th><th>Ramos contratados</th><th>Cumpleaños</th>${f === 'comision' ? `<th class="num">Comisión ${ANIO}</th>` : ''}<th></th></tr></thead>
     <tbody>${lista.slice(0, 400).map(fila).join('')}</tbody></table>` :
-    `<div class="empty">${cli.lista.length ? 'Ningún cliente coincide con la búsqueda.' : 'Todavía no hay clientes cargados.<br>Subí un listado de asegurados con <strong>Importar listado</strong> o cargá uno con <strong>+ Nuevo cliente</strong>.'}</div>`;
+    `<div class="empty">${f === 'comision' && !comDe ? 'Cargando comisiones…' : cli.lista.length ? 'Ningún cliente coincide con la búsqueda.' : 'Todavía no hay clientes cargados.<br>Subí un listado de asegurados con <strong>Importar listado</strong> o cargá uno con <strong>+ Nuevo cliente</strong>.'}</div>`;
 }
 
 function renderDuplicados() {
@@ -251,6 +290,8 @@ function abrirFicha(id) {
     '<div class="sub">No tiene pólizas cargadas en Cobranza ni en Renovaciones.</div>') +
     (c.compartido >= DS.TEL_COMPARTIDO ? `<div class="notice" style="margin:1rem 0 0">Este WhatsApp figura en ${c.compartido} clientes distintos. Por eso el sistema no lo usa solo para mandar avisos: si es realmente de esta persona, no hace falta cambiar nada en las otras fichas, pero conviene revisarlas.</div>` : '') : '';
   $('f-borrar').style.display = c ? '' : 'none'; $('f-borrar').dataset.ok = ''; $('f-borrar').textContent = 'Eliminar';
+  mostrarComisiones(c ? c.id : null);
+  const g = $('f-guardar'); g.dataset.ok = ''; g.textContent = 'Guardar'; $('f-prod').style.borderColor = '';
   const link = c && c.whatsapp ? DS.wppLink(c.whatsapp, '') : '';
   $('f-chat').style.display = link ? '' : 'none'; if (link) $('f-chat').href = link.replace(/\?text=$/, '');
   $('modal-ficha').classList.add('open'); if (!c) $('f-nombre').focus();
@@ -268,6 +309,13 @@ async function guardarFicha() {
   if (!previo) {                                     // norma: no duplicar clientes
     const otro = (c.cuit && cli.porCuit[c.cuit]) || (c.documento && cli.porDoc[c.documento]) || (cli.porClave[DS.claveNombre(nombre)] || [])[0];
     if (otro) { toast('Ya existe: ' + otro.nombre + '. Abrí esa ficha para editarla.', true); return; }
+  }
+  // Productor obligatorio: sin él, sus comisiones quedan "Sin asignar"
+  if (!c.productor && $('f-guardar').dataset.ok !== '1') {
+    $('f-guardar').dataset.ok = '1'; $('f-guardar').textContent = 'Guardar sin productor';
+    $('f-prod').style.borderColor = 'var(--danger)'; $('f-prod').focus();
+    toast('Falta el productor: sin él, las comisiones de este cliente quedan sin asignar', true);
+    return;
   }
   $('f-guardar').disabled = true;
   try {

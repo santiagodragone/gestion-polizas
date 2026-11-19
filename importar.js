@@ -57,5 +57,5 @@
     return DS.parseFecha(String(v == null ? '' : v).trim().split(' ')[0]);
   }
 
-  window.IMP = { tablaDeArchivo: tablaDeArchivo, tablaDeTexto: tablaDeTexto, reconocer: reconocer, fecha: fecha, norm: norm };
+  window.IMP = { cargarLector: cargarLector, tablaDeArchivo: tablaDeArchivo, tablaDeTexto: tablaDeTexto, reconocer: reconocer, fecha: fecha, norm: norm };
 })();

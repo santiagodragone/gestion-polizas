@@ -58,6 +58,26 @@
       .filter(function (f) { return f.some(function (c) { return String(c).trim() !== ''; }); })
       .map(function (f) { var o = {}; enc.forEach(function (h, i) { o[h] = f[i] === undefined ? '' : f[i]; }); return o; });
   }
+  // La hoja tal cual, como filas de celdas (sin la fila de títulos). Para hojas grandes o con títulos repetidos.
+  async function hojaCruda(nombre) {
+    var r = await fetch(SCRIPT_URL + '?hoja=' + encodeURIComponent(nombre) + '&t=' + Date.now());
+    var raw = await r.json();
+    if (!Array.isArray(raw)) throw new Error('Hoja ' + nombre + ' no disponible');
+    return raw.slice(1);
+  }
+  // Importe en pesos: acepta 1.234,56 / 1,234.56 / 1234.56 / $ 1.234 y números
+  function parsePeso(v) {
+    if (typeof v === 'number') return v;
+    var s = String(v == null ? '' : v).replace(/[$\s]/g, '');
+    if (!s) return 0;
+    var punto = s.indexOf('.') >= 0, coma = s.indexOf(',') >= 0;
+    if (punto && coma) s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    else if (coma) { var p = s.split(','); s = p.length === 2 && p[1].length <= 2 ? s.replace(',', '.') : s.replace(/,/g, ''); }
+    else if (punto && s.split('.').length > 2) s = s.replace(/\./g, '');
+    return parseFloat(s) || 0;
+  }
+  function pesos(n) { return '$ ' + Math.round(Number(n) || 0).toLocaleString('es-AR'); }
+
   async function hojaOpcional(nombre) { try { return await hoja(nombre); } catch (e) { return null; } }
   async function post(payload) {
     var r = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) });
@@ -160,7 +180,7 @@
   // Un solo nombre por productor, venga como código de cobrador, apellido suelto o nombre completo.
   // Santiago y Roberto Dragone se liquidan juntos como "Seguros Dragone".
   var PROPIO = 'Seguros Dragone';
-  var COD_PRODUCTOR = { '0': PROPIO, '9': PROPIO, '4': 'Emiliano Bartolomeo', '5': 'Evelin Chain', '7': 'Leonardo Bonilla', '22': 'Bruno Masnatta', '66': 'Marcelo Haikel' };
+  var COD_PRODUCTOR = { '0': PROPIO, '9': PROPIO, '10': PROPIO, '4': 'Emiliano Bartolomeo', '5': 'Evelin Chain', '7': 'Leonardo Bonilla', '22': 'Bruno Masnatta', '66': 'Marcelo Haikel' };
   var APELLIDO_PRODUCTOR = { dragone: PROPIO, roberto: PROPIO, rober: PROPIO, santiago: PROPIO, santi: PROPIO, bartolomeo: 'Emiliano Bartolomeo', chain: 'Evelin Chain',
                              bonilla: 'Leonardo Bonilla', masnatta: 'Bruno Masnatta', haikel: 'Marcelo Haikel' };
   var PRODUCTORES = [PROPIO, 'Emiliano Bartolomeo', 'Evelin Chain', 'Marcelo Haikel', 'Leonardo Bonilla', 'Bruno Masnatta'];
@@ -299,7 +319,7 @@
     p2: p2, esc: esc, norm: norm, esSi: esSi, fechaISO: fechaISO, fechaCorta: fechaCorta, fechaLarga: fechaLarga, parseFecha: parseFecha,
     diasDelMes: diasDelMes, sumarDias: sumarDias, diasEntre: diasEntre, wppLink: wppLink, wppNumero: wppNumero,
     iniciales: iniciales, nuevoId: nuevoId, toast: toast, recordar: recordar,
-    hoja: hoja, hojaOpcional: hojaOpcional, post: post,
+    hoja: hoja, hojaOpcional: hojaOpcional, hojaCruda: hojaCruda, post: post, parsePeso: parsePeso, pesos: pesos,
     leerCobranza: leerCobranza, cobranzaHoy: cobranzaHoy,
     leerRenovaciones: leerRenovaciones, renovacionesDelMes: renovacionesDelMes, renovacionesParaEnviar: renovacionesParaEnviar,
     PROPIO: PROPIO, PRODUCTORES: PRODUCTORES, productor: productor,

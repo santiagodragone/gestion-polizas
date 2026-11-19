@@ -82,13 +82,16 @@ function sistemaPost_(e) {
   var data;
   try { data = JSON.parse(e.postData.contents); } catch (err) { return null; }
   var acciones = ['asignar_ids_venc', 'guardar_venc', 'importar_venc', 'estado_venc', 'guardar_tarea', 'eliminar_tarea',
-                  'guardar_cliente', 'eliminar_cliente', 'importar_clientes'];
+                  'guardar_cliente', 'eliminar_cliente', 'importar_clientes',
+                  'importar_comisiones', 'cerrar_mes', 'reabrir_mes'];
   if (!data || acciones.indexOf(data.action) === -1) return null;
 
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    var _com = comisionesPost_(data); if (_com) return _com;
 
     if (data.action === 'asignar_ids_venc') return sisJson_({ ok: true, asignados: sisAsignarIds_() });
 
@@ -196,4 +199,55 @@ function setupSistema() {
   }
   if (filas.length) shT.getRange(2, 1, filas.length, filas[0].length).setValues(filas);
   Logger.log('Hojas creadas. Tareas migradas: ' + filas.length);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMISIONES — importar la liquidación de una compañía y cerrar / reabrir un mes
+// ═══════════════════════════════════════════════════════════════════════════
+
+var COM_CIERRE = { nombre: 'ComisionesCierre', cols: ['Clave', 'Periodo', 'Firma', 'Productor', 'Origen', 'Comisión', 'Cerrado'] };
+
+/** Saca de una hoja todas las filas cuyo Periodo (columna B) es el indicado. */
+function comQuitarPeriodo_(sh, periodo) {
+  var n = sh.getLastRow(), cols = sh.getLastColumn();
+  if (n < 2) return;
+  var datos = sh.getRange(2, 1, n - 1, cols).getValues();
+  var quedan = datos.filter(function (f) { return String(f[1]) !== String(periodo); });
+  if (quedan.length === datos.length) return;
+  sh.getRange(2, 1, n - 1, cols).clearContent();
+  if (quedan.length) sh.getRange(2, 1, quedan.length, cols).setValues(quedan);
+}
+
+/** Devuelve null si la acción no es de comisiones. */
+function comisionesPost_(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  if (data.action === 'importar_comisiones') {
+    // Filas en el orden de la hoja Comisiones: Año | Mes | Compañía | Asegurado | Ramo | Póliza |
+    // Fecha emisión | Fecha vigencia | Moneda | Prima | Premio | Comisión total | Cobrador
+    var sh = ss.getSheetByName('Comisiones');
+    if (!sh) return sisJson_({ ok: false, error: 'No existe la hoja Comisiones' });
+    var filas = (data.filas || []).filter(function (f) { return f && f.length === 13 && String(f[3]).trim() !== ''; });
+    if (filas.length) sh.getRange(sh.getLastRow() + 1, 1, filas.length, 13).setValues(filas);
+    return sisJson_({ ok: true, agregadas: filas.length });
+  }
+
+  if (data.action === 'cerrar_mes') {
+    // Guarda a quién quedó asignada cada comisión del mes, para que cambios posteriores no la modifiquen
+    var shC = sisHoja_(COM_CIERRE), periodo = String(data.periodo || '');
+    if (!/^\d{4}-\d{2}$/.test(periodo)) return sisJson_({ ok: false, error: 'Mes inválido' });
+    comQuitarPeriodo_(shC, periodo);
+    var hoy = Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd');
+    var filasC = (data.filas || []).map(function (f) {
+      return [periodo + '|' + f.firma, periodo, String(f.firma), String(f.productor || ''), String(f.origen || ''), Number(f.comision) || 0, hoy];
+    });
+    if (filasC.length) shC.getRange(shC.getLastRow() + 1, 1, filasC.length, filasC[0].length).setValues(filasC);
+    return sisJson_({ ok: true, guardadas: filasC.length, fecha: hoy });
+  }
+
+  if (data.action === 'reabrir_mes') {
+    comQuitarPeriodo_(sisHoja_(COM_CIERRE), String(data.periodo || ''));
+    return sisJson_({ ok: true });
+  }
+  return null;
 }
