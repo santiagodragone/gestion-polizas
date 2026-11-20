@@ -162,7 +162,7 @@
     tarea: ic('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.8 2.8L16 9.5"/>')
   };
 
-  let cob = null, ren = null, tareas = null, cli = null;
+  let cob = null, ren = null, tareas = null, cli = null, impCia = [];
   let persona = DS.recordar('dragone-persona') || '';
   const equipo = () => [...new Set([...DS.EQUIPO, ...(tareas || []).map(t => t.responsable).filter(Boolean)])];
   const deHoy = () => (tareas || []).filter(t => (!persona || t.responsable === persona) && !t.hecha && ['hoy', 'atrasadas'].includes(DS.grupoDe(t)));
@@ -174,8 +174,13 @@
     const vencidas = env ? env.filter(o => o.estado === 'vencida').length : 0;
     const pend = tareas ? deHoy() : null, atras = pend ? pend.filter(t => DS.grupoDe(t) === 'atrasadas').length : 0;
     return [
-      { href: 'gestion_polizas.html#impagos', icono: ICONOS.reclamo, n: c && c.impagos, tono: 'rojo',
-        lbl: 'Impagos a reclamar', det: c ? (c.impagos ? 'Cupones vencidos sin pago' : 'Nadie debe cupones vencidos') : '' },
+      (() => {
+        // Cupones propios vencidos + cuotas que la compañía informa impagas
+        const nc = c ? c.impagos : null, ni = impCia.length, n = nc == null ? null : nc + ni;
+        const det = nc == null ? '' : !n ? 'Nadie debe cuotas vencidas'
+          : [nc ? nc + (nc === 1 ? ' cupón' : ' cupones') : '', ni ? ni + ' en compañías' : ''].filter(Boolean).join(' · ');
+        return { href: !nc && ni ? 'gestion_polizas.html#compania' : 'gestion_polizas.html#impagos', icono: ICONOS.reclamo, n, tono: 'rojo', lbl: 'Impagos a reclamar', det };
+      })(),
       { href: 'gestion_polizas.html', icono: ICONOS.cupon, n: c && c.vencenHoy, tono: 'ambar',
         lbl: 'Cupones que vencen hoy', det: c ? (c.vencenHoy ? (c.sinAvisar ? c.sinAvisar + ' sin aviso enviado' : 'Todos con aviso enviado') : 'Hoy no vence ninguno') : '' },
       { href: 'renovaciones.html#enviar', icono: ICONOS.envio, n: env && env.length, tono: 'ambar',
@@ -250,8 +255,9 @@
     if (iniciado) return; iniciado = true;
     render();
     // Cada bloque se carga por separado: si una hoja todavía no existe, el resto igual aparece
-    const [cup, cupEst, venc, vencEst, pend, clientes] = await Promise.all(
-      ['Cupones', 'CuponesEstado', 'Vencimientos', 'RenovacionesEstado', 'Pendientes', 'Clientes'].map(DS.hojaOpcional));
+    const [cup, cupEst, venc, vencEst, pend, clientes, impC] = await Promise.all(
+      ['Cupones', 'CuponesEstado', 'Vencimientos', 'RenovacionesEstado', 'Pendientes', 'Clientes', 'ImpagosCompania'].map(DS.hojaOpcional));
+    impCia = DS.leerImpagosCompania(impC || []);
     cli = DS.leerClientes(clientes || []);
     if (cup) cob = DS.leerCobranza(cup, cupEst);
     if (venc) ren = DS.leerRenovaciones(venc, vencEst);

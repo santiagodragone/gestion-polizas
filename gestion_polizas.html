@@ -119,6 +119,9 @@
   .btn-wpp{display:inline-flex;align-items:center;gap:5px;padding:.3rem .7rem;border-radius:6px;background:var(--ok-soft);color:var(--ok);border:1px solid transparent;font-size:11px;font-weight:600;text-decoration:none;transition:all .15s;}
   .btn-wpp:hover{background:var(--ok);color:var(--navy);}
   .btn-wpp.off{opacity:.35;pointer-events:none;}
+  .cia-nota{font-size:12.5px;color:var(--muted);margin:0 0 1rem;}
+  .cia-sub{font-size:12px;color:var(--muted);margin-top:2px;} .cia-sub.mal{color:var(--warn);}
+  .cia-tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);margin-right:4px;}
   .tog{padding:.3rem .65rem;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;transition:all .15s;}
   .tog:hover{border-color:var(--muted);color:var(--white);}
   .tog.on-aviso{background:var(--info-soft);border-color:transparent;color:var(--info);}
@@ -226,6 +229,7 @@
   <div class="tabs">
     <button class="tab active" data-tab="calendario" onclick="verTab('calendario')">Calendario de cupones</button>
     <button class="tab" data-tab="polizas" onclick="verTab('polizas')">Pólizas en cupón<span class="count" id="tab-count"></span></button>
+    <button class="tab" data-tab="compania" onclick="verTab('compania')">Impagos en compañías<span class="count" id="tab-count-cia"></span></button>
     <button class="tab" data-tab="reportes" onclick="verTab('reportes')">Reportes de cobranza</button>
   </div>
 
@@ -283,6 +287,23 @@
         <tbody id="p-body"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- ══ IMPAGOS EN COMPAÑÍAS ══ -->
+  <div class="panel" id="panel-compania">
+    <p class="cia-nota" id="cia-nota"></p>
+    <div class="metrics-row" id="cia-metrics"></div>
+    <div class="toolbar">
+      <input class="inp" id="cia-busq" placeholder="Buscar cliente, póliza o ramo..." oninput="renderCompania()" style="flex:1;min-width:220px;max-width:420px">
+      <select class="inp" id="cia-filtro" onchange="renderCompania()" aria-label="Antigüedad">
+        <option value="">Todas</option>
+        <option value="30">Vencidas hace menos de 30 días</option>
+        <option value="31">Vencidas hace más de 30 días</option>
+      </select>
+      <div class="spacer"></div>
+      <a class="btn" href="cartera.html">Importar cartera</a>
+    </div>
+    <div class="table-wrap" id="cia-lista"></div>
   </div>
 
   <!-- ══ REPORTES ══ -->
@@ -365,6 +386,8 @@ const DOW = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 let cupones = [];      // {id, cliente, whatsapp, compania, poliza, ramo, dia, activo, notas, alta}
 let estados = {};      // 'id|2026-11' -> {aviso, fechaAviso, pagado, fechaPago}
 let reportes = [];
+let impCia = [];      // cuotas impagas que informa la compañía (hoja ImpagosCompania)
+let ultImport = null;
 let cli = null;        // clientes: de ahí sale el WhatsApp cuando el cupón no lo trae     // {periodo, compania, emitida, cobrada, notas}
 let editId = null;
 let charts = [];
@@ -455,7 +478,10 @@ async function cargarDatos() {
       periodo: normPeriodo(o['Periodo']), compania: String(o['Compañía']),
       emitida: parseMonto(o['Emitida']), cobrada: parseMonto(o['Cobrada']), notas: String(o['Notas'])
     })).filter(x => x.periodo);
-    cli = DS.leerClientes(await DS.hojaOpcional('Clientes') || []);
+    const [cl, ic, im] = await Promise.all(['Clientes', 'ImpagosCompania', 'Importaciones'].map(DS.hojaOpcional));
+    cli = DS.leerClientes(cl || []);
+    impCia = DS.leerImpagosCompania(ic || []);
+    ultImport = im && im.length ? im[im.length - 1] : null;
     $('aviso-setup').innerHTML = '';
     $('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
   } catch (err) {
@@ -512,7 +538,46 @@ function renderTodo() {
   $('dl-comp').innerHTML = comps.map(c => `<option value="${esc(c)}">`).join('');
   $('dl-ramo').innerHTML = RAMOS.map(c => `<option value="${esc(c)}">`).join('');
   $('tab-count').textContent = cupones.filter(c => c.activo).length || '';
-  renderCalendario(); renderPolizas(); renderReportes();
+  renderCalendario(); renderPolizas(); renderReportes(); renderCompania();
+  if (location.hash === '#compania') { verTab('compania'); history.replaceState(null, '', location.pathname); }
+}
+
+// ── IMPAGOS EN COMPAÑÍAS ───────────────────────────────────────────────────
+// Cuotas que la compañía informa sin cobrar (débito rechazado, tarjeta, pago fuera de término…).
+// Se cargan importando la cartera; acá solo se ven y se reclaman.
+const MSG_CIA = 'Hola {cliente}, ¿cómo estás? Te escribimos de Seguros Dragone. Nos figura impaga la cuota {cuota} de tu póliza de {ramo}{poliza} en {compania}, que venció el {fecha}{monto}. Si ya la abonaste, por favor avisanos. ¡Muchas gracias!';
+function mensajeCia(o) {
+  const n = o.cliente.split(/\s+/)[1] || o.cliente, nombre = n.charAt(0) + n.slice(1).toLowerCase();
+  return MSG_CIA.replace('{cliente}', nombre).replace('{cuota}', o.cuota).replace('{ramo}', o.ramo.toLowerCase()).replace('{poliza}', o.poliza ? ' N° ' + o.poliza : '')
+    .replace('{compania}', o.compania).replace('{fecha}', DS.fechaCorta(o.vence)).replace('{monto}', o.premio ? ', por ' + DS.pesos(o.premio) : '');
+}
+function renderCompania() {
+  const q = DS.norm($('cia-busq').value), f = $('cia-filtro').value;
+  $('tab-count-cia').textContent = impCia.length || '';
+  $('cia-nota').textContent = ultImport ? `Según ${ultImport['Compañía']} · datos al ${ultImport['Datos al']}. Se actualiza cada vez que importás la cartera.` : '';
+  const total = impCia.reduce((s, o) => s + o.premio, 0), clientes = new Set(impCia.map(o => o.cliente)).size;
+  const recientes = impCia.filter(o => DS.diasEntre(o.vence, hoy) <= 30).length;
+  $('cia-metrics').innerHTML = `
+    <div class="metric"><div class="metric-val">${impCia.length}</div><div class="metric-lbl">Cuotas impagas</div></div>
+    <div class="metric"><div class="metric-val">${clientes}</div><div class="metric-lbl">Clientes</div></div>
+    <div class="metric"><div class="metric-val">${recientes}</div><div class="metric-lbl">Vencidas en los últimos 30 días</div></div>
+    <div class="metric"><div class="metric-val">${DS.pesos(total)}</div><div class="metric-lbl">Premio adeudado</div></div>`;
+  const lista = impCia.filter(o => {
+    const d = DS.diasEntre(o.vence, hoy);
+    return (!q || DS.norm(o.cliente + ' ' + o.poliza + ' ' + o.ramo).includes(q)) && (f === '' || (f === '30' ? d <= 30 : d > 30));
+  }).sort((a, b) => b.vence - a.vence || a.cliente.localeCompare(b.cliente, 'es'));
+  if (!lista.length) {
+    $('cia-lista').innerHTML = `<div class="empty">${impCia.length ? 'Ninguna cuota coincide con la búsqueda.' : 'Todavía no hay datos de las compañías.<br>Importá la cartera desde <a href="cartera.html">Importar cartera</a>.'}</div>`;
+    return;
+  }
+  $('cia-lista').innerHTML = `<table><thead><tr><th>Cliente</th><th>Póliza</th><th>Cuota</th><th>Venció</th><th class="num">Premio</th><th></th></tr></thead><tbody>${lista.map(o => {
+    const wpp = DS.whatsappDe(cli, o.cliente, o.whatsapp), d = DS.diasEntre(o.vence, hoy);
+    return `<tr><td><strong>${esc(o.cliente)}</strong><div class="cia-sub">${esc(o.compania)}</div></td>
+      <td><span class="cia-tag">${esc(o.ramo)}</span> ${esc(o.poliza)}</td><td>${esc(o.cuota)}</td>
+      <td>${DS.fechaCorta(o.vence)}<div class="cia-sub${d > 30 ? ' mal' : ''}">hace ${d} ${d === 1 ? 'día' : 'días'}</div></td>
+      <td class="num">${DS.pesos(o.premio)}</td>
+      <td>${wpp ? `<a class="btn-wpp" href="${DS.wppLink(wpp, mensajeCia(o))}" target="_blank" rel="noopener">Reclamar</a>` : '<span class="cia-sub">Sin WhatsApp</span>'}</td></tr>`;
+  }).join('')}</tbody></table>`;
 }
 
 function verTab(t) {

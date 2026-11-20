@@ -53,6 +53,13 @@
   .search-box::placeholder{color:var(--muted);}
 
   /* TABLA */
+  .cia-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin:2.4rem 0 .9rem;}
+  .cia-titulo{font-size:15px;font-weight:600;} .cia-n{font-size:12px;font-weight:500;color:var(--muted);margin-left:6px;}
+  .cia-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+  .cia-desc{white-space:normal;max-width:420px;font-size:12px;color:var(--muted);line-height:1.45;}
+  .cia-tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);margin-right:4px;}
+  .btn-seguir{padding:.35rem .8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+  .btn-seguir:hover{border-color:var(--accent);color:var(--accent);}
   .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--navy2);}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   thead tr{border-bottom:1px solid var(--border);}
@@ -146,6 +153,7 @@
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
+<script src="datos.js"></script>
 </head>
 <body>
 
@@ -192,6 +200,25 @@
       <tbody id="tbody"></tbody>
     </table>
     <div id="empty" class="empty" style="display:none">No hay siniestros que coincidan.</div>
+  </div>
+
+  <!-- INFORMADOS POR LA COMPAÑÍA -->
+  <div class="cia-head">
+    <div>
+      <div class="cia-titulo">Informados por la compañía <span class="cia-n" id="cia-n"></span></div>
+      <div class="cia-sub" id="cia-sub">Siniestros que figuran en la cartera importada y todavía no están en seguimiento.</div>
+    </div>
+    <select class="search-box" id="cia-periodo" onchange="renderCia()" aria-label="Período" style="width:auto">
+      <option value="365">Último año</option>
+      <option value="">Todos</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table id="cia-tabla" style="display:none">
+      <thead><tr><th>Ocurrido</th><th>Asegurado</th><th>Póliza</th><th>Causa y lugar</th><th>Estado en compañía</th><th></th></tr></thead>
+      <tbody id="cia-tbody"></tbody>
+    </table>
+    <div id="cia-empty" class="empty">Cargando…</div>
   </div>
 </div>
 
@@ -353,6 +380,7 @@ async function cargarDatos() {
     })).filter(r => r.asegurado);
     renderStats();
     render();
+    renderCia();
   } catch(e) {
     document.getElementById('loading').innerHTML = '<p style="color:var(--muted)">Error al cargar. Verificá la conexión.</p>';
   }
@@ -610,7 +638,62 @@ document.getElementById('modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
 });
 
+// ── INFORMADOS POR LA COMPAÑÍA ────────────────────────────────────────────
+// Salen de la cartera importada (hoja SiniestrosCompania). "Seguir" lo pasa al seguimiento de arriba.
+let sinCia = null;
+async function cargarCia() {
+  try { sinCia = DS.leerSiniestrosCompania(await DS.hojaOpcional('SiniestrosCompania') || []); } catch (e) { sinCia = []; }
+  renderCia();
+}
+function yaSeguido(o) {
+  const pol = DS.soloDigitos(o.poliza);
+  return siniestros.some(s => (s.notas || '').includes('N° ' + o.numero) ||
+    (pol && DS.soloDigitos(s.poliza) === pol && o.ocurrido && DS.parseFecha(s.fechaSin) && Math.abs(DS.diasEntre(o.ocurrido, DS.parseFecha(s.fechaSin))) <= 3));
+}
+function renderCia() {
+  if (!sinCia) return;
+  const dias = document.getElementById('cia-periodo').value, desde = dias ? DS.sumarDias(DS.hoy, -Number(dias)) : null;
+  const lista = sinCia.filter(o => !yaSeguido(o) && (!desde || (o.ocurrido && o.ocurrido >= desde))).sort((a, b) => (b.ocurrido || 0) - (a.ocurrido || 0));
+  document.getElementById('cia-n').textContent = lista.length ? lista.length + ' sin seguimiento' : '';
+  const tb = document.getElementById('cia-tbody'), vacio = document.getElementById('cia-empty');
+  document.getElementById('cia-tabla').style.display = lista.length ? 'table' : 'none';
+  vacio.style.display = lista.length ? 'none' : 'block';
+  vacio.innerHTML = sinCia.length ? 'Todos los siniestros informados de este período ya están en seguimiento.'
+    : 'Todavía no se importó ninguna cartera. Se cargan desde <a href="cartera.html">Importar cartera</a>.';
+  const f = d => d ? DS.p2(d.getDate()) + '/' + DS.p2(d.getMonth() + 1) + '/' + d.getFullYear() : '—', e = DS.esc;
+  tb.innerHTML = lista.map(o => `<tr>
+    <td>${f(o.ocurrido)}<div class="cia-sub">N° ${e(o.numero)}</div></td>
+    <td><strong>${e(o.cliente) || '—'}</strong><div class="cia-sub">${e(o.compania)}</div></td>
+    <td><span class="cia-tag">${e(o.ramo)}</span>${e(o.poliza)}</td>
+    <td class="cia-desc">${e(o.tipo)}${o.lugar ? ' · ' + e(o.lugar) : ''}${o.descripcion ? '<br>' + e(o.descripcion.slice(0, 200)) + (o.descripcion.length > 200 ? '…' : '') : ''}</td>
+    <td>${e(o.estado)}${o.fechaEstado ? `<div class="cia-sub">desde ${f(o.fechaEstado)}</div>` : ''}</td>
+    <td><button class="btn-seguir" onclick="seguirCia('${e(o.numero)}')">Seguir</button></td></tr>`).join('');
+}
+function ramoDelSistema(r) {
+  const n = DS.norm(r);
+  if (/automotor|moto/.test(n)) return 'Automotor';
+  if (/hogar/.test(n)) return 'Hogar';
+  if (/combinado/.test(n)) return 'Combinado familiar';
+  if (/a\.?r\.?t/.test(n)) return 'ART';
+  if (/vida|scvo/.test(n)) return 'Vida';
+  return 'Otro';
+}
+function seguirCia(numero) {
+  const o = (sinCia || []).find(x => x.numero === numero); if (!o) return;
+  abrirModalNuevo();
+  const iso = d => d ? DS.fechaISO(d) : '';
+  document.getElementById('f-asegurado').value = o.cliente;
+  document.getElementById('f-poliza').value = o.poliza;
+  document.getElementById('f-compania').value = o.compania;
+  document.getElementById('f-ramo').value = ramoDelSistema(o.ramo);
+  document.getElementById('f-fecha-sin').value = iso(o.ocurrido);
+  document.getElementById('f-fecha-den').value = iso(o.denuncia);
+  document.getElementById('f-notas').value = ['Siniestro N° ' + o.numero + ' informado por ' + o.compania + '.', o.tipo, o.lugar, o.descripcion].filter(Boolean).join('\n');
+  actualizarChecklist();
+}
+
 cargarDatos();
+cargarCia();
 </script>
 </body>
 </html>

@@ -254,7 +254,7 @@ function autResumenDe_(p, d, hoy) {
   var cuerpo = autSeccion_('Tus tareas de hoy', tareas.length, filasTar, 'tareas.html', 'Abrir Mi día') +
     autSeccion_('Cupones que vencen hoy', cob.vencenHoy.length, filasHoy, 'gestion_polizas.html#avisar', 'Avisar por WhatsApp') +
     autSeccion_('Impagos a reclamar', cob.impagos.length, filasImp, 'gestion_polizas.html#impagos', 'Ver impagos') +
-    autSeccion_('Cuotas impagas en compañías', cia.length, filasCia, 'cartera.html#impagos', 'Ver y reclamar') +
+    autSeccion_('Cuotas impagas en compañías', cia.length, filasCia, 'gestion_polizas.html#compania', 'Ver y reclamar') +
     autSeccion_('Pólizas para enviar', ren.length, filasRen, 'renovaciones.html', 'Abrir Renovaciones') +
     autSeccion_('Cumpleaños de clientes', d.cumples.length, filasCum, 'clientes.html#cumples', 'Saludar');
   if (!cuerpo) cuerpo = '<p style="font-size:15px;color:#1f2937">Todo al día: no hay nada pendiente para hoy.</p>';

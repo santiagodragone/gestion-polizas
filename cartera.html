@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Compañías — Dragone Seguros</title>
+<title>Importar cartera — Dragone Seguros</title>
 <link rel="stylesheet" href="base.css">
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
@@ -28,6 +28,8 @@
   .mini{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;}
   .mini table{width:100%;} .mini td,.mini th{padding:.45rem .7rem;font-size:12px;white-space:nowrap;}
   .mini th{position:sticky;top:0;background:var(--surface-2);z-index:1;}
+  .hecho{background:var(--ok-soft);color:var(--text);border-radius:var(--radius);padding:1rem 1.2rem;margin:0 0 1rem;font-size:13px;line-height:1.7;}
+  .hecho strong{color:var(--ok);} .hecho a{font-weight:600;}
   .acciones{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:1.2rem;}
   .desc{white-space:normal !important;max-width:420px;color:var(--text-2);font-size:12px;line-height:1.45;}
   tbody tr.fila{cursor:pointer;} tbody tr.fila:hover td{background:var(--surface-2);}
@@ -38,46 +40,16 @@
 <body>
 
 <div class="page">
-  <div class="page-title">Compañías</div>
+  <div class="page-title">Importar cartera</div>
   <div class="last-update" id="last-update">Cargando datos...</div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="impagos" onclick="verTab('impagos')">Cuotas impagas<span class="count" id="n-impagos"></span></button>
-    <button class="tab" data-tab="siniestros" onclick="verTab('siniestros')">Siniestros<span class="count" id="n-siniestros"></span></button>
-    <button class="tab" data-tab="importar" onclick="verTab('importar')">Importar cartera</button>
-  </div>
-
-  <!-- IMPAGOS -->
-  <div class="panel active" id="panel-impagos">
-    <div class="metrics-row" id="met-impagos"></div>
-    <div class="toolbar">
-      <input class="inp" id="busq-imp" placeholder="Buscar cliente, póliza o ramo..." oninput="renderImpagos()" style="flex:1;min-width:220px;max-width:420px">
-      <select class="inp" id="filtro-imp" onchange="renderImpagos()" aria-label="Antigüedad">
-        <option value="">Todas</option>
-        <option value="30">Vencidas hace menos de 30 días</option>
-        <option value="31">Vencidas hace más de 30 días</option>
-      </select>
-    </div>
-    <div class="table-wrap" id="lista-impagos"></div>
-  </div>
-
-  <!-- SINIESTROS -->
-  <div class="panel" id="panel-siniestros">
-    <div class="toolbar">
-      <input class="inp" id="busq-sin" placeholder="Buscar cliente, póliza, lugar o descripción..." oninput="renderSiniestros()" style="flex:1;min-width:220px;max-width:420px">
-      <select class="inp" id="filtro-sin" onchange="renderSiniestros()" aria-label="Período">
-        <option value="365">Último año</option>
-        <option value="">Todos</option>
-      </select>
-    </div>
-    <div class="table-wrap" id="lista-siniestros"></div>
-  </div>
-
   <!-- IMPORTAR -->
-  <div class="panel" id="panel-importar">
+  <div id="panel-importar">
     <div id="imp-paso1">
       <p class="pasos">Subí el archivo de interfaz que descarga Federación Patronal en <strong>Cartera → Interfaces</strong> (por ejemplo <em>sir04668_1.zip</em>), tal cual, sin descomprimirlo.
-        El archivo se lee en esta computadora: antes de guardar te muestro qué va a cambiar.</p>
+        El archivo se lee en esta computadora: antes de guardar te muestro qué va a cambiar.<br>
+        Al importar se actualizan <a href="clientes.html">Clientes</a>, <a href="renovaciones.html">Renovaciones</a>, los impagos en <a href="gestion_polizas.html#compania">Cobranza → Impagos en compañías</a> y <a href="siniestros.html">Siniestros</a>.</p>
+      <div class="hecho" id="imp-hecho" style="display:none"></div>
       <div class="imp-zona" id="imp-zona" onclick="$('imp-archivo').click()">
         <strong>Elegí el archivo .zip</strong> o arrastralo acá<br>Federación Patronal · interfaz de cartera
         <input type="file" id="imp-archivo" accept=".zip" hidden onchange="leerArchivo(this.files[0])">
@@ -102,13 +74,13 @@
 
       <div class="bloque">
         <h4>Cuotas impagas <small id="imp-cuenta"></small></h4>
-        <p>Cuotas vencidas sin cobrar de pólizas vigentes (últimos 6 meses). Reemplazan la lista anterior de esta compañía.</p>
+        <p>Cuotas vencidas sin cobrar de pólizas vigentes (últimos 6 meses). Van a Cobranza → Impagos en compañías y reemplazan la lista anterior de esta compañía.</p>
         <div class="mini"><table><thead><tr><th>Cliente</th><th>Ramo</th><th>Póliza</th><th>Cuota</th><th>Venció</th><th class="num">Premio</th></tr></thead><tbody id="impp-tbody"></tbody></table></div>
       </div>
 
       <div class="bloque">
         <h4>Siniestros <small id="sin-cuenta"></small></h4>
-        <p>Todos los siniestros que informa la compañía. Reemplazan la lista anterior de esta compañía.</p>
+        <p>Todos los siniestros que informa la compañía. Aparecen en Siniestros como "Informados por la compañía", para pasarlos a seguimiento.</p>
       </div>
 
       <div class="acciones">
@@ -124,7 +96,6 @@
 const { hoy, esc, norm, p2, fechaISO, fechaCorta, toast } = DS;
 const $ = id => document.getElementById(id);
 const COMPANIA = 'Federación Patronal';
-const MSG_IMPAGO = 'Hola {nombre}, ¿cómo estás? Te escribimos de Seguros Dragone. Nos figura impaga la cuota {cuota} de tu póliza de {ramo} en {compania}, que venció el {fecha}{monto}. ¿Nos confirmás si ya la abonaste? ¡Muchas gracias!';
 
 // Nombres de ramo como ya se usan en Renovaciones
 const RAMO_SISTEMA = { '4': 'AUTOMOTOR', '24': 'HOGAR', '80': 'A.R.T', '17': 'SCVO', '44': 'MOTO' };
@@ -133,88 +104,16 @@ const RAMOS_APAGADOS = ['19', '50', '36', '34', '38'];
 const DIAS_ATRAS = 45, DIAS_IMPAGOS = 180;
 
 let cli = DS.indexarClientes([]), ren = { polizas: [] };
-let impagos = [], siniestros = [], importaciones = [];
 let plan = null;
 
 // ───────────────────────── Carga ─────────────────────────
 async function cargarDatos() {
   try {
-    const [c, v, imp, sin, log] = await Promise.all(['Clientes', 'Vencimientos', 'ImpagosCompania', 'SiniestrosCompania', 'Importaciones'].map(DS.hojaOpcional));
+    const [c, v, log] = await Promise.all(['Clientes', 'Vencimientos', 'Importaciones'].map(DS.hojaOpcional));
     cli = DS.leerClientes(c || []); ren = DS.leerRenovaciones(v || [], []);
-    impagos = (imp || []).map(o => ({ compania: String(o['Compañía']), ramo: String(o['Ramo']), poliza: String(o['Póliza']), cliente: String(o['Cliente']).trim(),
-      whatsapp: String(o['WhatsApp'] || ''), cuota: String(o['Cuota']), vence: DS.parseFecha(o['Vencimiento']), premio: DS.parsePeso(o['Premio']) })).filter(x => x.cliente && x.vence);
-    siniestros = (sin || []).map(o => ({ compania: String(o['Compañía']), numero: String(o['Siniestro']), ramo: String(o['Ramo']), poliza: String(o['Póliza']),
-      cliente: String(o['Cliente']).trim(), ocurrido: DS.parseFecha(o['Ocurrido']), estado: String(o['Estado']), fechaEstado: DS.parseFecha(o['Fecha estado']),
-      tipo: String(o['Tipo']), lugar: String(o['Lugar']), descripcion: String(o['Descripción']) }));
-    importaciones = log || [];
-    const ult = importaciones[importaciones.length - 1];
-    $('last-update').textContent = ult ? `Última importación: ${ult['Compañía']} · datos al ${ult['Datos al']} · importado ${String(ult['Importado']).replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1')}` : 'Todavía no se importó ninguna cartera';
+    const ult = (log || [])[(log || []).length - 1];
+    $('last-update').textContent = ult ? `Última importación: ${ult['Compañía']} · código ${ult['Código']} · datos al ${ult['Datos al']} · importado ${String(ult['Importado']).replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1')}` : 'Todavía no se importó ninguna cartera';
   } catch (e) { $('last-update').textContent = 'Sin conexión con la planilla'; }
-  renderImpagos(); renderSiniestros();
-  const h = location.hash.slice(1);
-  if (['impagos', 'siniestros', 'importar'].includes(h)) verTab(h);
-  else if (!impagos.length && !siniestros.length) verTab('importar');
-}
-
-function verTab(t) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + t));
-}
-
-// ───────────────────────── Impagos ─────────────────────────
-function mensajeImpago(o) {
-  const nombre = o.cliente.split(/\s+/).slice(1, 2).join(' ') || o.cliente;
-  const nom = nombre.charAt(0) + nombre.slice(1).toLowerCase();
-  return MSG_IMPAGO.replace('{nombre}', nom).replace('{cuota}', o.cuota || '').replace('{ramo}', o.ramo.toLowerCase()).replace('{compania}', o.compania)
-    .replace('{fecha}', fechaCorta(o.vence)).replace('{monto}', o.premio ? ', por ' + DS.pesos(o.premio) : '');
-}
-function renderImpagos() {
-  const q = norm($('busq-imp').value), f = $('filtro-imp').value;
-  const lista = impagos.filter(o => {
-    const dias = DS.diasEntre(o.vence, hoy);
-    return (!q || norm(o.cliente + ' ' + o.poliza + ' ' + o.ramo).includes(q)) && (f === '' || (f === '30' ? dias <= 30 : dias > 30));
-  }).sort((a, b) => b.vence - a.vence || a.cliente.localeCompare(b.cliente, 'es'));
-  $('n-impagos').textContent = impagos.length || '';
-  const total = impagos.reduce((s, o) => s + o.premio, 0), clientes = new Set(impagos.map(o => o.cliente)).size;
-  const recientes = impagos.filter(o => DS.diasEntre(o.vence, hoy) <= 30).length;
-  $('met-impagos').innerHTML = `
-    <div class="metric"><div class="metric-val">${impagos.length}</div><div class="metric-lbl">Cuotas impagas</div></div>
-    <div class="metric"><div class="metric-val">${clientes}</div><div class="metric-lbl">Clientes</div></div>
-    <div class="metric"><div class="metric-val">${recientes}</div><div class="metric-lbl">Vencidas este último mes</div></div>
-    <div class="metric"><div class="metric-val">${DS.pesos(total)}</div><div class="metric-lbl">Premio total adeudado</div></div>`;
-  if (!lista.length) {
-    $('lista-impagos').innerHTML = `<div class="empty">${impagos.length ? 'Ninguna cuota coincide con la búsqueda.' : 'No hay cuotas impagas cargadas.<br>Importá la cartera de la compañía en la pestaña <strong>Importar cartera</strong>.'}</div>`;
-    return;
-  }
-  $('lista-impagos').innerHTML = `<table><thead><tr><th>Cliente</th><th>Póliza</th><th>Cuota</th><th>Venció</th><th class="num">Premio</th><th></th></tr></thead><tbody>${lista.map(o => {
-    const wpp = DS.whatsappDe(cli, o.cliente, o.whatsapp), dias = DS.diasEntre(o.vence, hoy);
-    const link = wpp ? DS.wppLink(wpp, mensajeImpago(o)) : '';
-    return `<tr><td><strong>${esc(o.cliente)}</strong><div class="sub">${esc(o.compania)}</div></td>
-      <td><span class="tag ramo">${esc(o.ramo)}</span> <span class="mono">${esc(o.poliza)}</span></td>
-      <td class="mono">${esc(o.cuota)}</td>
-      <td>${fechaCorta(o.vence)}<div class="sub${dias > 30 ? ' estado-mal' : ''}">hace ${dias} ${dias === 1 ? 'día' : 'días'}</div></td>
-      <td class="num">${DS.pesos(o.premio)}</td>
-      <td>${link ? `<a class="btn-wpp" href="${link}" target="_blank" rel="noopener">Reclamar</a>` : '<span class="sub">Sin WhatsApp</span>'}</td></tr>`;
-  }).join('')}</tbody></table>`;
-}
-
-// ───────────────────────── Siniestros ─────────────────────────
-function renderSiniestros() {
-  const q = norm($('busq-sin').value), dias = $('filtro-sin').value;
-  const desde = dias ? DS.sumarDias(hoy, -Number(dias)) : null;
-  const lista = siniestros.filter(o => (!q || norm([o.cliente, o.poliza, o.lugar, o.descripcion, o.tipo, o.ramo].join(' ')).includes(q)) && (!desde || (o.ocurrido && o.ocurrido >= desde)))
-    .sort((a, b) => (b.ocurrido || 0) - (a.ocurrido || 0));
-  $('n-siniestros').textContent = siniestros.length || '';
-  if (!lista.length) {
-    $('lista-siniestros').innerHTML = `<div class="empty">${siniestros.length ? 'Ningún siniestro coincide con la búsqueda.' : 'No hay siniestros cargados.<br>Importá la cartera de la compañía en la pestaña <strong>Importar cartera</strong>.'}</div>`;
-    return;
-  }
-  $('lista-siniestros').innerHTML = `<table><thead><tr><th>Ocurrido</th><th>Cliente</th><th>Póliza</th><th class="oculta-cel">Causa y lugar</th><th>Estado</th></tr></thead><tbody>${lista.map(o => `
-    <tr><td>${o.ocurrido ? DS.p2(o.ocurrido.getDate()) + '/' + DS.p2(o.ocurrido.getMonth() + 1) + '/' + o.ocurrido.getFullYear() : '—'}<div class="sub">N° ${esc(o.numero)}</div></td>
-      <td><strong>${esc(o.cliente) || '—'}</strong><div class="sub">${esc(o.compania)}</div></td>
-      <td><span class="tag ramo">${esc(o.ramo)}</span> <span class="mono">${esc(o.poliza)}</span></td>
-      <td class="desc oculta-cel">${esc(o.tipo)}${o.lugar ? ' · ' + esc(o.lugar) : ''}${o.descripcion ? `<br>${esc(o.descripcion.slice(0, 220))}${o.descripcion.length > 220 ? '…' : ''}` : ''}</td>
-      <td>${esc(o.estado)}${o.fechaEstado ? `<div class="sub">desde ${fechaCorta(o.fechaEstado)}</div>` : ''}</td></tr>`).join('')}</tbody></table>`;
 }
 
 // ───────────────────────── Lectura del .zip de Federación Patronal ─────────────────────────
@@ -439,10 +338,11 @@ async function importar() {
     const r = await DS.post({ action: 'importar_compania', compania: COMPANIA, codigo: p.meta.codigo, datosAl: p.meta.datosAl, resumen,
       impagos: p.impagos.map(({ vence, ...o }) => o), siniestros: p.siniestros });
     hecho.push(`${r.impagos} cuotas impagas y ${r.siniestros} siniestros`);
-    toast('Listo: ' + hecho.join(' · '));
     reiniciar();
+    $('imp-hecho').innerHTML = `<strong>Importación terminada.</strong> ${esc(hecho.join(' · '))}.<br>
+      Ver: <a href="gestion_polizas.html#compania">impagos en Cobranza</a> · <a href="siniestros.html">siniestros</a> · <a href="renovaciones.html">renovaciones</a> · <a href="clientes.html">clientes</a>`;
+    $('imp-hecho').style.display = '';
     await cargarDatos();
-    verTab('impagos');
   } catch (e) {
     toast('No se pudo terminar la importación: ' + e.message + (hecho.length ? ' (ya se guardó: ' + hecho.join(' · ') + ')' : ''), true);
   } finally { btn.disabled = false; btn.textContent = 'Importar'; prog.textContent = ''; }

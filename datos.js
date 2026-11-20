@@ -187,6 +187,8 @@
   function productor(v) {
     var s = String(v == null ? '' : v).trim();
     if (!s) return '';
+    var cod = s.match(/^c[oó]d\.?\s*(\d+)$/i);          // "Cód. 10", como quedó guardado antes de conocer el código
+    if (cod) s = cod[1];
     if (COD_PRODUCTOR[s]) return COD_PRODUCTOR[s];
     if (/^\d+$/.test(s)) return 'Cód. ' + s;
     var palabras = norm(s).split(/\s+/);
@@ -267,6 +269,23 @@
       .filter(Boolean).sort(function (a, b) { return a.faltan - b.faltan; });
   }
 
+  // ── Lo que informan las compañías (se carga desde "Importar cartera") ─────
+  function leerImpagosCompania(filas) {
+    return (filas || []).map(function (o) {
+      return { compania: String(o['Compañía']).trim(), ramo: String(o['Ramo'] || '').trim(), poliza: String(o['Póliza'] || '').trim(),
+               cliente: String(o['Cliente']).trim(), whatsapp: String(o['WhatsApp'] || '').trim(), cuota: String(o['Cuota'] || '').trim(),
+               vence: parseFecha(o['Vencimiento']), premio: parsePeso(o['Premio']) };
+    }).filter(function (x) { return x.cliente && x.vence && x.vence < hoy; });
+  }
+  function leerSiniestrosCompania(filas) {
+    return (filas || []).map(function (o) {
+      return { compania: String(o['Compañía']).trim(), numero: String(o['Siniestro']).trim(), ramo: String(o['Ramo'] || '').trim(),
+               poliza: String(o['Póliza'] || '').trim(), cliente: String(o['Cliente'] || '').trim(), ocurrido: parseFecha(o['Ocurrido']),
+               denuncia: parseFecha(o['Denuncia']), estado: String(o['Estado'] || '').trim(), fechaEstado: parseFecha(o['Fecha estado']),
+               tipo: String(o['Tipo'] || '').trim(), lugar: String(o['Lugar'] || '').trim(), descripcion: String(o['Descripción'] || '').trim() };
+    }).filter(function (x) { return x.numero; });
+  }
+
   // ── Tareas ───────────────────────────────────────────────────────────────
   var EQUIPO = ['Santiago', 'Bruno', 'Leo', 'Roberto'];
   var REPITE = ['No', 'Todos los días', 'Todas las semanas', 'Todos los meses'];
@@ -325,6 +344,7 @@
     PROPIO: PROPIO, PRODUCTORES: PRODUCTORES, productor: productor,
     TEL_COMPARTIDO: TEL_COMPARTIDO, soloDigitos: soloDigitos, claveNombre: claveNombre, celular10: celular10, leerClientes: leerClientes,
     indexarClientes: indexarClientes, clienteAFila: clienteAFila, clienteDe: clienteDe, whatsappDe: whatsappDe, proximoCumple: proximoCumple, cumpleanos: cumpleanos,
+    leerImpagosCompania: leerImpagosCompania, leerSiniestrosCompania: leerSiniestrosCompania,
     leerTareas: leerTareas, tareaAFila: tareaAFila, completar: completar, grupoDe: grupoDe, hechaHoy: hechaHoy
   };
 })();
