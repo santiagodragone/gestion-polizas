@@ -57,6 +57,7 @@
     { href: 'clientes.html', nombre: 'Clientes', icono: ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>') },
     { href: 'gestion_polizas.html', nombre: 'Cobranza', icono: ic('<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="M2.5 10h19M6.5 15h4"/>') },
     { href: 'renovaciones.html', nombre: 'Renovaciones', icono: ic('<path d="M20 11a8 8 0 0 0-14.3-4.3L4 8.5M4 4v4.5h4.5M4 13a8 8 0 0 0 14.3 4.3L20 15.5M20 20v-4.5h-4.5"/>') },
+    { href: 'cartera.html', nombre: 'Compañías', icono: ic('<path d="M3 21h18M5 21V8l7-4 7 4v13M9 21v-6h6v6M9 11h.01M15 11h.01"/>') },
     { href: 'siniestros.html', nombre: 'Siniestros', icono: ic('<path d="M5 11l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><path d="M6.5 17v2M17.5 17v2M7 14h.01M17 14h.01"/>') },
     { href: 'ventas.html', nombre: 'Ventas', icono: ic('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>') },
     { grupo: 'Consulta' },

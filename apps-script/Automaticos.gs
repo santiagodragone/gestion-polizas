@@ -140,7 +140,7 @@ function autHoja_(nombre) {
 function autPer_(y, m) { return y + '-' + ('0' + (m + 1)).slice(-2); }
 
 function autDatos_(hoy) {
-  return { tareas: autTareas_(hoy), cobranza: autCobranza_(hoy), renovaciones: autRenovaciones_(hoy), cumples: autCumples_(hoy) };
+  return { tareas: autTareas_(hoy), cobranza: autCobranza_(hoy), renovaciones: autRenovaciones_(hoy), cumples: autCumples_(hoy), companias: autImpagosCompania_(hoy) };
 }
 
 function autTareas_(hoy) {
@@ -209,6 +209,15 @@ function autCumples_(hoy) {
   }).map(function (o) { return String(o['Nombre']).trim(); });
 }
 
+// Cuotas impagas que informan las compañías (hoja ImpagosCompania, se carga desde "Compañías" en el sistema)
+function autImpagosCompania_(hoy) {
+  return autHoja_('ImpagosCompania').map(function (o) {
+    return { cliente: String(o['Cliente']).trim(), compania: String(o['Compañía']).trim(), ramo: String(o['Ramo'] || '').trim(),
+             poliza: String(o['Póliza'] || '').trim(), fecha: autFecha_(o['Vencimiento']) };
+  }).filter(function (o) { return o.cliente && o.fecha && o.fecha < hoy; })
+    .sort(function (a, b) { return b.fecha - a.fecha; });
+}
+
 // ── Armado del mail ───────────────────────────────────────────────────────
 function autEsc_(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
@@ -238,11 +247,14 @@ function autResumenDe_(p, d, hoy) {
   var filasImp = cob.impagos.map(function (c) { return autEsc_(c.cliente) + gris([c.compania, 'venció el ' + autCorta_(c.fecha), c.aviso ? 'avisado' : 'sin avisar'].filter(String).join(' · ')); });
   var filasHoy = cob.vencenHoy.map(function (c) { return autEsc_(c.cliente) + gris([c.compania, c.ramo, c.aviso ? 'avisado' : 'sin avisar'].filter(String).join(' · ')); });
   var filasRen = ren.map(function (r) { return autEsc_(r.cliente) + gris([r.compania, r.riesgo, (r.fecha < hoy ? 'venció el ' : 'vence el ') + autCorta_(r.fecha)].filter(String).join(' · ')); });
+  var cia = p.cobranza ? (d.companias || []) : [];
+  var filasCia = cia.map(function (c) { return autEsc_(c.cliente) + gris([c.compania, c.ramo + ' ' + c.poliza, 'venció el ' + autCorta_(c.fecha)].join(' · ')); });
   var filasCum = d.cumples.map(function (n) { return autEsc_(n); });
 
   var cuerpo = autSeccion_('Tus tareas de hoy', tareas.length, filasTar, 'tareas.html', 'Abrir Mi día') +
     autSeccion_('Cupones que vencen hoy', cob.vencenHoy.length, filasHoy, 'gestion_polizas.html#avisar', 'Avisar por WhatsApp') +
     autSeccion_('Impagos a reclamar', cob.impagos.length, filasImp, 'gestion_polizas.html#impagos', 'Ver impagos') +
+    autSeccion_('Cuotas impagas en compañías', cia.length, filasCia, 'cartera.html#impagos', 'Ver y reclamar') +
     autSeccion_('Pólizas para enviar', ren.length, filasRen, 'renovaciones.html', 'Abrir Renovaciones') +
     autSeccion_('Cumpleaños de clientes', d.cumples.length, filasCum, 'clientes.html#cumples', 'Saludar');
   if (!cuerpo) cuerpo = '<p style="font-size:15px;color:#1f2937">Todo al día: no hay nada pendiente para hoy.</p>';
@@ -252,6 +264,7 @@ function autResumenDe_(p, d, hoy) {
   if (tareas.length) partes.push(tareas.length + (tareas.length === 1 ? ' tarea' : ' tareas'));
   if (cob.impagos.length) partes.push(cob.impagos.length + (cob.impagos.length === 1 ? ' impago' : ' impagos'));
   if (cob.vencenHoy.length) partes.push(cob.vencenHoy.length + ' vence' + (cob.vencenHoy.length === 1 ? '' : 'n') + ' hoy');
+  if (cia.length) partes.push(cia.length + ' impagas en compañías');
   if (ren.length) partes.push(ren.length + ' para enviar');
   var asunto = 'Tu día · ' + fecha + (partes.length ? ' — ' + partes.join(', ') : ' — todo al día');
 

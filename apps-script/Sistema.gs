@@ -83,7 +83,7 @@ function sistemaPost_(e) {
   try { data = JSON.parse(e.postData.contents); } catch (err) { return null; }
   var acciones = ['asignar_ids_venc', 'guardar_venc', 'importar_venc', 'estado_venc', 'guardar_tarea', 'eliminar_tarea',
                   'guardar_cliente', 'eliminar_cliente', 'importar_clientes',
-                  'importar_comisiones', 'cerrar_mes', 'reabrir_mes'];
+                  'importar_comisiones', 'cerrar_mes', 'reabrir_mes', 'importar_compania'];
   if (!data || acciones.indexOf(data.action) === -1) return null;
 
   var lock = LockService.getScriptLock();
@@ -92,6 +92,7 @@ function sistemaPost_(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
     var _com = comisionesPost_(data); if (_com) return _com;
+    var _cia = companiaPost_(data); if (_cia) return _cia;
 
     if (data.action === 'asignar_ids_venc') return sisJson_({ ok: true, asignados: sisAsignarIds_() });
 
@@ -250,4 +251,46 @@ function comisionesPost_(data) {
     return sisJson_({ ok: true });
   }
   return null;
+}
+
+// ── Cartera de compañías (interfaz de Federación Patronal) ───────────────────
+// El sistema lee el .zip en la computadora y manda acá solo lo que hay que guardar.
+// Impagos y siniestros se reemplazan enteros por compañía + código de productor en cada importación.
+var CIA_HOJAS = {
+  impagos:    { nombre: 'ImpagosCompania',    cols: ['Compañía', 'Código', 'Sección', 'Ramo', 'Póliza', 'Certificado', 'Cliente', 'WhatsApp', 'Cuota', 'Vencimiento', 'Premio', 'Recibo', 'Actualizado'] },
+  siniestros: { nombre: 'SiniestrosCompania', cols: ['Compañía', 'Código', 'Siniestro', 'Ramo', 'Póliza', 'Certificado', 'Cliente', 'Ocurrido', 'Denuncia', 'Estado', 'Fecha estado', 'Tipo', 'Lugar', 'Descripción', 'Actualizado'] },
+  log:        { nombre: 'Importaciones',      cols: ['Compañía', 'Código', 'Datos al', 'Importado', 'Resumen'] }
+};
+
+function ciaReemplazar_(def, compania, codigo, filas) {
+  var sh = sisHoja_(def), n = sh.getLastRow(), quedan = [];
+  if (n >= 2) {
+    quedan = sh.getRange(2, 1, n - 1, def.cols.length).getValues().filter(function (f) {
+      return !(String(f[0]) === compania && String(f[1]) === codigo);
+    });
+    sh.getRange(2, 1, n - 1, def.cols.length).clearContent();
+  }
+  var todas = quedan.concat(filas);
+  if (todas.length) sh.getRange(2, 1, todas.length, def.cols.length).setValues(todas);
+  return filas.length;
+}
+
+function companiaPost_(data) {
+  if (data.action !== 'importar_compania') return null;
+  var cia = String(data.compania || '').trim(), cod = String(data.codigo || '').trim();
+  if (!cia || !cod) return sisJson_({ ok: false, error: 'Falta la compañía o el código de productor' });
+  var ahora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+  var imp = (data.impagos || []).map(function (q) {
+    return [cia, cod, String(q.seccion || ''), String(q.ramo || ''), String(q.poliza || ''), String(q.certificado || ''), String(q.cliente || ''),
+      String(q.whatsapp || ''), String(q.cuota || ''), String(q.vencimiento || ''), Number(q.premio) || 0, String(q.recibo || ''), ahora];
+  });
+  var sin = (data.siniestros || []).map(function (q) {
+    return [cia, cod, String(q.numero || ''), String(q.ramo || ''), String(q.poliza || ''), String(q.certificado || ''), String(q.cliente || ''),
+      String(q.ocurrido || ''), String(q.denuncia || ''), String(q.estado || ''), String(q.fechaEstado || ''), String(q.tipo || ''),
+      String(q.lugar || ''), String(q.descripcion || '').slice(0, 2000), ahora];
+  });
+  var r = { ok: true, impagos: ciaReemplazar_(CIA_HOJAS.impagos, cia, cod, imp), siniestros: ciaReemplazar_(CIA_HOJAS.siniestros, cia, cod, sin) };
+  var log = sisHoja_(CIA_HOJAS.log);
+  log.appendRow([cia, cod, String(data.datosAl || ''), ahora, String(data.resumen || '').slice(0, 500)]);
+  return sisJson_(r);
 }
