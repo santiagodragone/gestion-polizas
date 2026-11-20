@@ -89,6 +89,9 @@
   .chip.pagado{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);}
   .chip.vencido{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
   .chip.previo{background:var(--neutral-soft);border-color:var(--muted);color:var(--muted);}
+  .chip.cia{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);border-left-style:dashed;}
+  .badge.cia{color:var(--danger);background:var(--danger-soft);}
+  .item.cia{border-left:3px solid var(--danger);}
   .chip-more{font-family:var(--mono);font-size:9.5px;color:var(--muted);padding-left:4px;}
   .legend{display:flex;gap:1rem;flex-wrap:wrap;margin-top:.7rem;font-size:11px;color:var(--muted);}
   .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;}
@@ -197,7 +200,7 @@
     .cal-num span{display:none;}
     .chips{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;}
     .chip{width:7px;height:7px;padding:0;border-radius:50%;border-left-width:0;font-size:0;}
-    .chip.pendiente{background:var(--warn);}.chip.avisado{background:var(--info);}.chip.pagado{background:var(--ok);}.chip.vencido{background:var(--danger);}.chip.previo{background:var(--muted);}
+    .chip.pendiente{background:var(--warn);}.chip.avisado{background:var(--info);}.chip.pagado{background:var(--ok);}.chip.vencido{background:var(--danger);}.chip.previo{background:var(--muted);}.chip.cia{background:var(--danger);}
     .chip-more{padding:0;font-size:9px;}
     .cal-dow{font-size:8.5px;padding:.4rem 0;letter-spacing:.04em;}
   }
@@ -602,27 +605,35 @@ function renderCalendario() {
   $('mes-label').textContent = MESES[m] + ' ' + y;
   const ocs = ocurrencias(y, m, true);
   const r = resumen(ocs);
+  // Cuotas que la compañía informa impagas (se cargan al importar la cartera): van en el día en que vencieron
+  const ciaMes = impCia.filter(o => o.vence.getFullYear() === y && o.vence.getMonth() === m && (!$('f-comp').value || o.compania === $('f-comp').value)
+    && (!$('f-busq').value || DS.norm(o.cliente + ' ' + o.poliza).includes(DS.norm($('f-busq').value))));
   const p = (a, b) => b ? `<small>${Math.round(a / b * 100)}%</small>` : '';
   $('cal-metrics').innerHTML = `
     <div class="metric"><div class="metric-val c-gold">${r.total}</div><div class="metric-lbl">Cupones del mes</div></div>
     <div class="metric"><div class="metric-val c-info">${r.avisados}${p(r.avisados, r.total)}</div><div class="metric-lbl">Avisos enviados</div></div>
     <div class="metric"><div class="metric-val c-ok">${r.pagados}${p(r.pagados, r.total)}</div><div class="metric-lbl">Pagados</div></div>
     <div class="metric"><div class="metric-val c-danger">${r.vencidos}</div><div class="metric-lbl">Vencidos impagos</div></div>
-    <div class="metric"><div class="metric-val c-warn">${r.proximos}</div><div class="metric-lbl">Vencen en 7 días</div></div>`;
+    <div class="metric"><div class="metric-val c-warn">${r.proximos}</div><div class="metric-lbl">Vencen en 7 días</div></div>
+    <div class="metric"><div class="metric-val c-danger">${ciaMes.length}</div><div class="metric-lbl">Impagas en compañías</div></div>`;
 
-  const porDia = {};
+  const porDia = {}, ciaDia = {};
   ocs.forEach(o => (porDia[o.dia] = porDia[o.dia] || []).push(o));
+  ciaMes.forEach(o => (ciaDia[o.vence.getDate()] = ciaDia[o.vence.getDate()] || []).push(o));
   const dim = diasDelMes(y, m), offset = (new Date(y, m, 1).getDay() + 6) % 7;
   const esMesActual = y === hoy.getFullYear() && m === hoy.getMonth();
   let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
   for (let i = 0; i < offset; i++) html += '<div class="cal-cell out"></div>';
   for (let d = 1; d <= dim; d++) {
-    const lista = porDia[d] || [];
+    const lista = porDia[d] || [], cia = ciaDia[d] || [];
+    const chips = lista.map(o => `<div class="chip ${o.estado}" title="${esc(o.c.cliente)}">${esc(o.c.cliente)}</div>`)
+      .concat(cia.map(o => `<div class="chip cia" title="${esc(o.cliente + ' · impaga en ' + o.compania)}">${esc(o.cliente)}</div>`));
+    const cuenta = [lista.length ? lista.length + ' cup.' : '', cia.length ? cia.length + ' cía.' : ''].filter(Boolean).join(' · ');
     const cls = ['cal-cell', esMesActual && d === hoy.getDate() ? 'today' : '', panelModo === 'dia' && d === diaSel ? 'sel' : ''].join(' ');
     html += `<div class="${cls}" onclick="selDia(${d})">
-      <div class="cal-num"><b>${d}</b>${lista.length ? `<span>${lista.length} cup.</span>` : ''}</div>
-      <div class="chips">${lista.slice(0, 3).map(o => `<div class="chip ${o.estado}" title="${esc(o.c.cliente)}">${esc(o.c.cliente)}</div>`).join('')}
-      ${lista.length > 3 ? `<div class="chip-more">+${lista.length - 3} más</div>` : ''}</div>
+      <div class="cal-num"><b>${d}</b>${cuenta ? `<span>${cuenta}</span>` : ''}</div>
+      <div class="chips">${chips.slice(0, 3).join('')}
+      ${chips.length > 3 ? `<div class="chip-more">+${chips.length - 3} más</div>` : ''}</div>
     </div>`;
   }
   const resto = (7 - (offset + dim) % 7) % 7;
@@ -631,12 +642,13 @@ function renderCalendario() {
 
   // Panel lateral
   ['dia', 'avisar', 'impagos'].forEach(k => $('seg-' + k).classList.toggle('active', panelModo === k));
-  let lista, titulo, sub, vacio;
+  let lista, titulo, sub, vacio, extra = [];
   if (panelModo === 'dia') {
     const f = new Date(y, m, diaSel);
-    lista = porDia[diaSel] || [];
+    lista = porDia[diaSel] || []; extra = ciaDia[diaSel] || [];
     titulo = DIAS[f.getDay()] + ' ' + diaSel + ' de ' + MESES[m];
-    sub = lista.length ? lista.length + (lista.length === 1 ? ' cupón vence' : ' cupones vencen') + ' este día' : '';
+    sub = [lista.length ? lista.length + (lista.length === 1 ? ' cupón vence' : ' cupones vencen') + ' este día' : '',
+           extra.length ? extra.length + (extra.length === 1 ? ' cuota impaga' : ' cuotas impagas') + ' en compañías' : ''].filter(Boolean).join(' · ');
     vacio = 'No vence ningún cupón este día.';
   } else if (panelModo === 'avisar') {
     lista = ocs.filter(o => o.estado === 'pendiente');
@@ -646,12 +658,29 @@ function renderCalendario() {
     // Incluye lo que quedó impago del mes anterior: sigue habiendo que reclamarlo
     const ant = new Date(y, m - 1, 1);
     lista = ocurrencias(ant.getFullYear(), ant.getMonth(), true).filter(o => o.estado === 'vencido').concat(ocs.filter(o => o.estado === 'vencido'));
-    titulo = 'Impagos a reclamar'; sub = lista.length + ' cupones vencidos sin pago (' + MESES[ant.getMonth()] + ' y ' + MESES[m] + ')';
+    extra = impCia.filter(o => o.vence >= ant && o.vence < new Date(y, m + 1, 1)).sort((a, b) => b.vence - a.vence);
+    titulo = 'Impagos a reclamar'; sub = lista.length + ' cupones vencidos sin pago (' + MESES[ant.getMonth()] + ' y ' + MESES[m] + ')' + (extra.length ? ' · ' + extra.length + ' cuotas impagas en compañías' : '');
     vacio = 'No hay cupones vencidos impagos este mes.';
   }
   $('day-title').textContent = titulo; $('day-sub').textContent = sub;
-  $('day-list').innerHTML = lista.length ? lista.map(itemHTML).join('') :
+  $('day-list').innerHTML = lista.length || extra.length ? lista.map(itemHTML).join('') + extra.map(itemCiaHTML).join('') :
     `<div class="empty">${cupones.length ? vacio : 'Todavía no hay pólizas cargadas.<br>Tocá <strong>+ Nueva póliza</strong> para empezar.'}</div>`;
+}
+
+// Cuota impaga informada por la compañía: no se marca a mano, se actualiza con la próxima importación
+function itemCiaHTML(o) {
+  const wpp = DS.whatsappDe(cli, o.cliente, o.whatsapp);
+  const meta = [o.compania, [o.ramo, o.poliza].filter(Boolean).join(' '), o.cuota ? 'cuota ' + o.cuota : '', DS.pesos(o.premio)].filter(Boolean).map(esc).join(' · ');
+  const cuando = panelModo === 'dia' ? '' : `Venció el ${p2(o.vence.getDate())}/${p2(o.vence.getMonth() + 1)} · `;
+  return `<div class="item cia">
+    <div class="item-top">
+      <div><div class="item-name">${esc(o.cliente)}</div><div class="item-meta">${cuando}${meta}</div></div>
+      <span class="badge cia">Impaga en compañía</span>
+    </div>
+    <div class="item-actions">
+      <a class="btn-wpp${wpp ? '' : ' off'}" href="${wpp ? DS.wppLink(wpp, mensajeCia(o)) : '#'}" target="_blank" rel="noopener" title="${wpp ? 'Abrir WhatsApp con el reclamo' : 'Sin número cargado'}">WhatsApp${wpp ? '' : ' (sin número)'}</a>
+    </div>
+  </div>`;
 }
 
 const ETIQ = { pendiente: 'Falta avisar', avisado: 'Avisado', pagado: 'Pagado', vencido: 'Vencido', previo: 'Sin seguimiento' };
